@@ -504,6 +504,14 @@ class XDebugTrace extends Object implements IBarPanel
 							$record->includeFile = strlen($cols[7]) ? $cols[7] : NULL;
 							$record->filename = $cols[8];
 							$record->line = $cols[9];
+							$record->evalInfo = '';
+
+							if (strcmp(substr($record->filename, -13), "eval()'d code") === 0) {
+								preg_match('/(.*)\(([0-9]+)\) : eval\(\)\'d code$/', $record->filename, $match);
+								$record->evalInfo = "- eval()'d code ($record->line)";
+								$record->filename = $match[1];
+								$record->line = $match[2];
+							}
 						}
 
 						$this->addRecord($record);

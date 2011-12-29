@@ -52,7 +52,7 @@
 					<td style="padding-left:{=($indent[$record->level] * 8) + 5}px">{$record->function}</td>
 					<td class="right {$record->deltaTime|timeClass}">{$record->deltaTime|time}</td>
 					<td class="right">{$record->deltaMemory|bytes}</td>
-					<td><a href="editor://open/?file={$record->filename}&amp;line={$record->line}" title="{$record->filename}">{$record->filename|basename}&nbsp;(<b>{$record->line}</b>)</a></td>
+					<td><a href="editor://open/?file={$record->filename}&amp;line={$record->line}" title="{$record->filename}">{$record->filename|basename}&nbsp;(<b>{$record->line}</b>)</a> {$record->evalInfo}</td>
 				</tr>
 			</tbody>
 		</table>
