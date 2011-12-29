@@ -29,10 +29,10 @@
  * ...
  * $xdebugPanel->stop();
  *
- * // Because only one XDebugTrace instance can exists, you can do
- * \Panel\XDebugTrace::getInstance()->start();
- * \Panel\XDebugTrace::getInstance()->pause();
- * \Panel\XDebugTrace::getInstance()->stop();
+ * // Shortcuts for start(), pause(), stop()
+ * \Panel\XDebugTrace::callStart();
+ * \Panel\XDebugTrace::callPause();
+ * \Panel\XDebugTrace::callStop();
  *
  * // See \Panel\XDebugTrace::defaultFilterCb() for filtering options.
  * $xdebugPanel->addFilterCallback(
@@ -327,7 +327,7 @@ class XDebugTrace extends Object implements IBarPanel
 	/**
 	 * Template helper converts seconds to ns, us, ms, s.
 	 *
-	 * @param  float time in seconds
+	 * @param  float time interval in seconds
 	 * @param  decimal part precision
 	 * @return string formated time
 	 */
@@ -355,7 +355,7 @@ class XDebugTrace extends Object implements IBarPanel
 	/**
 	 * Template helper converts seconds to HTML class.
 	 *
-	 * @param  float time in seconds
+	 * @param  float time interval in seconds
 	 * @param  float over this value is interval classified as slow
 	 * @param  float under this value is interval classified as fast
 	 * @return string
