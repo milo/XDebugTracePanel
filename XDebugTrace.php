@@ -208,9 +208,9 @@ class XDebugTrace extends Object implements IBarPanel
 			@unlink($this->traceFile . '.xt');
 		}
 	}
-	
-	
-	
+
+
+
 	public static function __callStatic($name, $args)
 	{
 		if (self::$instance !== NULL && preg_match('/^call([A-Z].*)/', $name, $match)) {
@@ -219,7 +219,7 @@ class XDebugTrace extends Object implements IBarPanel
 				return call_user_func_array(array(self::$instance, $method), $args);
 			}
 		}
-		
+
 		parent::__callStatic($name, $args);
 	}
 
@@ -316,6 +316,7 @@ class XDebugTrace extends Object implements IBarPanel
 			$this->lazyTemplate->registerHelperLoader('Nette\Templating\DefaultHelpers::loader');
 			$this->lazyTemplate->registerHelper('time', array($this, 'timeHelper'));
 			$this->lazyTemplate->registerHelper('timeClass', array($this, 'timeClassHelper'));
+			$this->lazyTemplate->registerHelper('basename', array($this, 'basenameHelper'));
 		}
 
 		return $this->lazyTemplate;
@@ -372,6 +373,19 @@ class XDebugTrace extends Object implements IBarPanel
 		}
 
 		return 'timeSlow';
+	}
+
+
+
+	/**
+	 * Template helper extracts base filename from file path.
+	 *
+	 * @param  string path to file
+	 * @return string
+	 */
+	public function basenameHelper($path)
+	{
+		return basename($path);
 	}
 
 
@@ -440,7 +454,7 @@ class XDebugTrace extends Object implements IBarPanel
 		$fd = @fopen($this->traceFile . '.xt', 'rb');
 		if ($fd === false) {
 			$this->setError("Cannot open trace file '$this->traceFile'", error_get_last());
-		
+
 		} elseif (!filesize($this->traceFile . '.xt')) {
 			$this->setError("Trace file '$this->traceFile' is empty");
 

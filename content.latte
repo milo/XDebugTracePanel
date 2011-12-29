@@ -2,20 +2,20 @@
 	#nette-debug .xdbgpanel b {
 		font-weight: bold;
 	}
-	
+
 	#nette-debug .xdbgpanel .nette-inner {
 		max-width: 100%;
 		max-height: 700px;
 	}
 
-	#nette-debug .xdbgpanel .nette-inner .time,
-	#nette-debug .xdbgpanel .nette-inner .memory,
-	#nette-debug .xdbgpanel .nette-inner .level,
-	#nette-debug .xdbgpanel .nette-inner .id {
+	#nette-debug .xdbgpanel .nette-inner td.right {
 		text-align: right;
+	}
+
+	#nette-debug .xdbgpanel .nette-inner td {
 		white-space: nowrap;
 	}
-	
+
 	#nette-debug .xdbgpanel .nette-inner .timeFast {
 		color: green;
 	}
@@ -47,12 +47,12 @@
 			</thead>
 			<tbody>
 				<tr n:foreach="$trace AS $record">
-					<td class="id">{$record->id}</td>
-					<td class="level">{$record->level}</td>
+					<td class="right">{$record->id}</td>
+					<td class="right">{$record->level}</td>
 					<td style="padding-left:{=($indent[$record->level] * 8) + 5}px">{$record->function}</td>
-					<td class="time {$record->deltaTime|timeClass}">{$record->deltaTime|time}</td>
-					<td class="memory">{$record->deltaMemory|bytes}</td>
-					<td><a href="editor://open/?file={$record->filename}&amp;line={$record->line}">{$record->filename}&nbsp;(<b>{$record->line}</b>)</a></td>
+					<td class="right {$record->deltaTime|timeClass}">{$record->deltaTime|time}</td>
+					<td class="right">{$record->deltaMemory|bytes}</td>
+					<td><a href="editor://open/?file={$record->filename}&amp;line={$record->line}" title="{$record->filename}">{$record->filename|basename}&nbsp;(<b>{$record->line}</b>)</a></td>
 				</tr>
 			</tbody>
 		</table>
