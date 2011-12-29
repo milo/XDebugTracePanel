@@ -1,12 +1,16 @@
 <?php
 
+namespace Panel;
+
+use
+	Nette\Object,
+	Nette\Diagnostics\IBarPanel,
+	Nette\Diagnostics\Debugger,
+	Nette\Templating\FileTemplate,
+	Nette\Latte\Engine;
+
 /**
  * XDebug Trace panel for Nette 2.0 framework.
- *
- * @author Miloslav Hůla
- * @version 0.3-beta
- * @see http://github.com/mil0/XDebugTracePanel
- * @licence LGPL
  *
  * <code>
  * // Register panel in bootstrap.php
@@ -43,18 +47,12 @@
  *    }
  * );
  * </code>
+ *
+ * @author Miloslav Hůla
+ * @version 0.3-beta
+ * @see http://github.com/mil0/XDebugTracePanel
+ * @licence LGPL
  */
-
-namespace Panel;
-
-use
-	Nette\Object,
-	Nette\Diagnostics\IBarPanel,
-	Nette\Diagnostics\Debugger,
-	Nette\Templating\FileTemplate,
-	Nette\Latte\Engine;
-
-
 class XDebugTrace extends Object implements IBarPanel
 {
 	/** Tracing states */
