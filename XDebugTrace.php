@@ -451,6 +451,8 @@ class XDebugTrace extends Object implements IBarPanel
 			return $this->renderError();
 		}
 
+		$parsingStart = microtime(true);
+
 		$fd = @fopen($this->traceFile . '.xt', 'rb');
 		if ($fd === false) {
 			$this->setError("Cannot open trace file '$this->traceFile.xt'", error_get_last());
@@ -527,6 +529,8 @@ class XDebugTrace extends Object implements IBarPanel
 		if ($this->isError) {
 			return $this->renderError();
 		}
+
+		$template->parsingTime = microtime(true) - $parsingStart;
 
 		ob_start();
 		$template->render();
