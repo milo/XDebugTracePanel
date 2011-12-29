@@ -189,7 +189,7 @@ class XDebugTrace extends Object implements IBarPanel
 		if (!extension_loaded('xdebug')) {
 			$this->setError('XDebug extension is not loaded');
 
-		} elseif (@file_put_contents($traceFile . '.xt', '', FILE_APPEND) === false) {
+		} elseif (@file_put_contents($traceFile . '.xt', '') === false) {
 			$this->setError("Cannot create trace file '$traceFile'", error_get_last());
 
 		} else {
@@ -207,6 +207,20 @@ class XDebugTrace extends Object implements IBarPanel
 		if ($this->deleteTraceFile && is_file($this->traceFile . '.xt')) {
 			@unlink($this->traceFile . '.xt');
 		}
+	}
+	
+	
+	
+	public static function __callStatic($name, $args)
+	{
+		if (self::$instance !== NULL && preg_match('/^call([A-Z].*)/', $name, $match)) {
+			$method = lcfirst($match[1]);
+			if (method_exists(self::$instance, $method)) {
+				return call_user_func_array(array(self::$instance, $method), $args);
+			}
+		}
+		
+		parent::__callStatic($name, $args);
 	}
 
 
@@ -426,6 +440,9 @@ class XDebugTrace extends Object implements IBarPanel
 		$fd = @fopen($this->traceFile . '.xt', 'rb');
 		if ($fd === false) {
 			$this->setError("Cannot open trace file '$this->traceFile'", error_get_last());
+		
+		} elseif (!filesize($this->traceFile . '.xt')) {
+			$this->setError("Trace file '$this->traceFile' is empty");
 
 		} elseif (!preg_match('/^Version: 2\..*/', (string) fgets($fd, self::$traceLineLength))) {
 			$this->setError('Trace file version line mischmasch');
