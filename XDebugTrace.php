@@ -190,7 +190,7 @@ class XDebugTrace extends Object implements IBarPanel
 			$this->setError('XDebug extension is not loaded');
 
 		} elseif (@file_put_contents($traceFile . '.xt', '') === false) {
-			$this->setError("Cannot create trace file '$traceFile'", error_get_last());
+			$this->setError("Cannot create trace file '$traceFile.xt'", error_get_last());
 
 		} else {
 			$this->traceFile = $traceFile;
@@ -453,10 +453,10 @@ class XDebugTrace extends Object implements IBarPanel
 
 		$fd = @fopen($this->traceFile . '.xt', 'rb');
 		if ($fd === false) {
-			$this->setError("Cannot open trace file '$this->traceFile'", error_get_last());
+			$this->setError("Cannot open trace file '$this->traceFile.xt'", error_get_last());
 
 		} elseif (!filesize($this->traceFile . '.xt')) {
-			$this->setError("Trace file '$this->traceFile' is empty");
+			$this->setError("Trace file '$this->traceFile.xt' is empty");
 
 		} elseif (!preg_match('/^Version: 2\..*/', (string) fgets($fd, self::$traceLineLength))) {
 			$this->setError('Trace file version line mischmasch');
