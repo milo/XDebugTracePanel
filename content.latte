@@ -1,0 +1,61 @@
+<style>
+	#nette-debug .xdbgpanel b {
+		font-weight: bold;
+	}
+	
+	#nette-debug .xdbgpanel .nette-inner {
+		max-width: 100%;
+		max-height: 700px;
+	}
+
+	#nette-debug .xdbgpanel .nette-inner .time,
+	#nette-debug .xdbgpanel .nette-inner .memory,
+	#nette-debug .xdbgpanel .nette-inner .level,
+	#nette-debug .xdbgpanel .nette-inner .id {
+		text-align: right;
+		white-space: nowrap;
+	}
+	
+	#nette-debug .xdbgpanel .nette-inner .timeFast {
+		color: green;
+	}
+
+	#nette-debug .xdbgpanel .nette-inner .timeMedian {
+		color: orange;
+	}
+
+	#nette-debug .xdbgpanel .nette-inner .timeSlow {
+		color: red;
+	}
+</style>
+
+<div class="xdbgpanel nette-panel">
+	<h1>XDebugTrace</h1>
+
+	<div class="nette-inner" n:inner-foreach="$traces AS $traceNo => $trace">
+		<table style="width: 100%">
+			{assign $indent = $indents[$traceNo]}
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Level</th>
+					<th>Function</th>
+					<th>&Delta;&nbsp;Time</th>
+					<th>&Delta;&nbsp;Memory</th>
+					<th>File&nbsp;(Line)</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr n:foreach="$trace AS $record">
+					<td class="id">{$record->id}</td>
+					<td class="level">{$record->level}</td>
+					<td style="padding-left:{=($indent[$record->level] * 8) + 5}px">{$record->function}</td>
+					<td class="time {$record->deltaTime|timeClass}">{$record->deltaTime|time}</td>
+					<td class="memory">{$record->deltaMemory|bytes}</td>
+					<td><a href="editor://open/?file={$record->filename}&amp;line={$record->line}">{$record->filename}&nbsp;(<b>{$record->line}</b>)</a></td>
+				</tr>
+			</tbody>
+		</table>
+		<br n:if="!$iterator->isLast()">
+	</div>
+</div>
