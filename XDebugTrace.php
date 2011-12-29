@@ -64,10 +64,19 @@ class XDebugTrace extends Object implements IBarPanel
 		STATE_PAUSE = 2;
 
 
-	/** Filter action bitmask */
+	/** Filter callback action bitmask */
 	const
 		FILTER_STOP = 0x01,
 		FILTER_SKIP = 0x02;
+
+
+	/** Adding filter bitmask flags */
+	const
+		FILTER_APPEND = 0x01,
+		FILTER_ENTRY = 0x02,
+		FILTER_EXIT = 0x04,
+		FILTER_BOTH = 0x06,
+		FILTER_REPLACE = 0x08;
 
 
 	/**
@@ -149,9 +158,15 @@ class XDebugTrace extends Object implements IBarPanel
 
 
 	/**
-	 * @var array of callbacks called when parsing trace file
+	 * @var array of callbacks called when parsing entry record from trace file
 	 */
-	protected $filterCallbacks = array();
+	protected $filterEntryCallbacks = array();
+
+
+	/**
+	 * @var array of callbacks called when parsing exit record from trace file
+	 */
+	protected $filterExitCallbacks = array();
 
 
 	/**
@@ -593,7 +608,7 @@ class XDebugTrace extends Object implements IBarPanel
 	{
 		if ($record->isEntry) {
 			$add = true;
-			foreach ($this->filterCallbacks AS $callback) {
+			foreach ($this->filterEntryCallbacks AS $callback) {
 				$result = (int) call_user_func($callback, $record, $this);
 				if ($result & self::FILTER_SKIP) {
 					$add = false;
@@ -610,6 +625,13 @@ class XDebugTrace extends Object implements IBarPanel
 			}
 
 		} elseif (isset($this->trace[$record->id])) {
+			foreach ($this->filterExitCallbacks AS $callback) {
+				$result = (int) call_user_func($callback, $record, $this);
+				if ($result & self::FILTER_STOP) {
+					break;
+				}
+			}
+
 			$r = $this->trace[$record->id];
 			$r->deltaTime = $record->time - $r->time;
 			$r->deltaMemory = $record->memory - $r->memory;
@@ -673,30 +695,39 @@ class XDebugTrace extends Object implements IBarPanel
 	 * Register own filter callback.
 	 *
 	 * @param  callback(stdClass $record, \Panel\XDebugTrace $this)
-	 * @param  bool true for prepend, false for append, NULL for replace all
+	 * @param  int bitmask of self::FILTER_*
 	 */
-	public function addFilterCallback($callback, $prepend = false)
+	public function addFilterCallback($callback, $flags = self::FILTER_ENTRY)
 	{
-		if ($prepend === NULL) {
-			$this->filterCallbacks = array();
+		$flags = (int) $flags;
+
+		// Entry records filter
+		if ($flags & self::FILTER_ENTRY) {
+			if ($flags & self::FILTER_REPLACE) {
+				$this->filterEntryCallbacks = array();
+			}
+
+			if ($flags & self::FILTER_APPEND) {
+				$this->filterEntryCallbacks[] = $callback;
+
+			} else {
+				array_unshift($this->filterEntryCallbacks, $callback);
+			}
 		}
 
-		if ($prepend) {
-			array_unshift($this->filterCallbacks, $callback);
+		// Exit records filter
+		if ($flags & self::FILTER_EXIT) {
+			if ($flags & self::FILTER_REPLACE) {
+				$this->filterExitCallbacks = array();
+			}
 
-		} else {
-			$this->filterCallbacks[] = $callback;
+			if ($flags & self::FILTER_APPEND) {
+				$this->filterExitCallbacks[] = $callback;
+
+			} else {
+				array_unshift($this->filterExitCallbacks, $callback);
+			}
 		}
-	}
-
-
-
-	/**
-	 * @return array of registered filter callbacks.
-	 */
-	public function getFilterCallbacks()
-	{
-		return $this->filterCallbacks;
 	}
 
 }
