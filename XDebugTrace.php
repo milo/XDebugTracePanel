@@ -470,7 +470,7 @@ class XDebugTrace extends Object implements IBarPanel
 		if ($fd === false) {
 			$this->setError("Cannot open trace file '$this->traceFile.xt'", error_get_last());
 
-		} elseif (!filesize($this->traceFile . '.xt')) {
+		} elseif (!($traceFileSize = filesize($this->traceFile . '.xt'))) {
 			$this->setError("Trace file '$this->traceFile.xt' is empty");
 
 		} elseif (!preg_match('/^Version: 2\..*/', (string) fgets($fd, self::$traceLineLength))) {
@@ -544,6 +544,7 @@ class XDebugTrace extends Object implements IBarPanel
 		}
 
 		$template->parsingTime = microtime(true) - $parsingStart;
+		$template->traceFileSize = $traceFileSize;
 
 		ob_start();
 		$template->render();
