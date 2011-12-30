@@ -49,7 +49,7 @@ use
  * </code>
  *
  * @author Miloslav Hůla
- * @version 0.3-beta
+ * @version 0.3-beta2
  * @see http://github.com/mil0/XDebugTracePanel
  * @licence LGPL
  */
