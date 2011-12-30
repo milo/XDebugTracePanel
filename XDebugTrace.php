@@ -42,7 +42,7 @@ use
  * $xdebugPanel->addFilterCallback(
  *     function($record) {
  *        if ($record->function === 'dontCareFunction') {
- *            return \Panel\XDebugTrace::FILTER_SKIP;
+ *            return \Panel\XDebugTrace::SKIP;
  *        }
  *    }
  * );
@@ -64,8 +64,8 @@ class XDebugTrace extends Object implements IBarPanel
 
 	/** Filter callback action bitmask */
 	const
-		FILTER_STOP = 0x01,
-		FILTER_SKIP = 0x02;
+		STOP = 0x01,
+		SKIP = 0x02;
 
 
 	/** Adding filter bitmask flags */
@@ -608,11 +608,11 @@ class XDebugTrace extends Object implements IBarPanel
 			$add = true;
 			foreach ($this->filterEntryCallbacks AS $callback) {
 				$result = (int) call_user_func($callback, $record, $this);
-				if ($result & self::FILTER_SKIP) {
+				if ($result & self::SKIP) {
 					$add = false;
 				}
 
-				if ($result & self::FILTER_STOP) {
+				if ($result & self::STOP) {
 					break;
 				}
 			}
@@ -625,7 +625,7 @@ class XDebugTrace extends Object implements IBarPanel
 		} elseif (isset($this->trace[$record->id])) {
 			foreach ($this->filterExitCallbacks AS $callback) {
 				$result = (int) call_user_func($callback, $record, $this);
-				if ($result & self::FILTER_STOP) {
+				if ($result & self::STOP) {
 					break;
 				}
 			}
@@ -654,36 +654,36 @@ class XDebugTrace extends Object implements IBarPanel
 	 * Default filter
 	 *
 	 * @param  stdClass trace file record
-	 * @return int bitmask of self::FILTER_*
+	 * @return int bitmask of self::SKIP, self::STOP
 	 */
 	protected function defaultFilterCb(\stdClass $record)
 	{
 		if ($this->skipInternals && $record->isInternal) {
-			return self::FILTER_SKIP;
+			return self::SKIP;
 		}
 
 		if ($record->filename === __FILE__) {
-			return self::FILTER_SKIP;
+			return self::SKIP;
 		}
 
 		if (strncmp($record->function, 'Nette\\', 6) === 0) {
-			return self::FILTER_SKIP;
+			return self::SKIP;
 		}
 
 		if (strncmp($record->function, 'Panel\\XDebugTrace::', 19) === 0) {
-			return self::FILTER_SKIP;
+			return self::SKIP;
 		}
 
 		if (strncmp($record->function, 'Panel\\XDebugTrace->', 19) === 0) {
-			return self::FILTER_SKIP;
+			return self::SKIP;
 		}
 
 		if (strcmp($record->function, 'callback') === 0) {
-			return self::FILTER_SKIP;
+			return self::SKIP;
 		}
 
 		if ($record->includeFile !== NULL) {
-			return self::FILTER_SKIP;
+			return self::SKIP;
 		}
 	}
 
