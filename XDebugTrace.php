@@ -70,11 +70,15 @@ class XDebugTrace extends Object implements IBarPanel
 
 	/** Adding filter bitmask flags */
 	const
-		FILTER_APPEND = 0x01,
-		FILTER_ENTRY = 0x02,
-		FILTER_EXIT = 0x04,
-		FILTER_BOTH = 0x06,
-		FILTER_REPLACE = 0x08;
+		FILTER_ENTRY = 1,
+		FILTER_EXIT = 2,
+		FILTER_BOTH = 3,
+		FILTER_APPEND_ENTRY = 4,
+		FILTER_APPEND_EXIT = 8,
+		FILTER_APPEND = 12,
+		FILTER_REPLACE_ENTRY = 16,
+		FILTER_REPLACE_EXIT = 32,
+		FILTER_REPLACE = 48;
 
 
 	/**
@@ -504,12 +508,14 @@ class XDebugTrace extends Object implements IBarPanel
 					} else {
 						$record = (object) array(
 							'level' => (int) $cols[0],
-							'indent' => 0,
 							'id' => (float) $cols[1],
 							'isEntry' => !$cols[2],
+							'exited' => false,
 							'time' => (float) $cols[3],
+							'exitTime' => NULL,
 							'deltaTime' => NULL,
 							'memory' => (float) $cols[4],
+							'exitMemory' => NULL,
 							'deltaMemory' => NULL,
 						);
 
@@ -533,6 +539,8 @@ class XDebugTrace extends Object implements IBarPanel
 					}
 				}
  			}
+
+ 			$this->closeTrace();	// in case of non-complete trace file
 
 			$template = $this->getTemplate();
 			$template->traces = $this->traces;
@@ -574,15 +582,39 @@ class XDebugTrace extends Object implements IBarPanel
 	 */
 	protected function closeTrace()
 	{
-		$null = NULL;
-		$this->trace =& $null;
+		if ($this->trace !== NULL) {
+			foreach ($this->trace AS $id => $record) {
+				if (!$record->exited) {	// last chance to filter non-exited records by FILTER_EXIT callback
+					$remove = false;
+					foreach ($this->filterExitCallbacks AS $callback) {
+						$result = (int) call_user_func($callback, $record, false, $this);
+						if ($result & self::SKIP) {
+							$remove = true;
+						}
 
-		if (count($this->indent)) {
-			ksort($this->indent);
-			$this->indent = array_combine(array_keys($this->indent), range(0, count($this->indent) - 1));
+						if ($result & self::STOP) {
+							break;
+						}
+					}
+
+					if ($remove) {
+						unset($this->trace[$id]);
+						continue;
+					}
+				}
+
+				$this->indent[$record->level] = 1;
+			}
+
+			if (count($this->indent)) {
+				ksort($this->indent);
+				$this->indent = array_combine(array_keys($this->indent), range(0, count($this->indent) - 1));
+			}
+
+			$null = NULL;
+			$this->trace =& $null;
+			$this->indent =& $null;
 		}
-
-		$this->indent =& $null;
 	}
 
 
@@ -608,7 +640,7 @@ class XDebugTrace extends Object implements IBarPanel
 		if ($record->isEntry) {
 			$add = true;
 			foreach ($this->filterEntryCallbacks AS $callback) {
-				$result = (int) call_user_func($callback, $record, $this);
+				$result = (int) call_user_func($callback, $record, true, $this);
 				if ($result & self::SKIP) {
 					$add = false;
 				}
@@ -619,21 +651,33 @@ class XDebugTrace extends Object implements IBarPanel
 			}
 
 			if ($add) {
-				$this->indent[$record->level] = 1;
 				$this->trace[$record->id] = $record;
 			}
 
 		} elseif (isset($this->trace[$record->id])) {
+			$entryRecord = $this->trace[$record->id];
+
+			$entryRecord->exited = true;
+			$entryRecord->exitTime = $record->time;
+			$entryRecord->deltaTime = $record->time - $entryRecord->time;
+			$entryRecord->exitMemory = $record->memory;
+			$entryRecord->deltaMemory = $record->memory - $entryRecord->memory;
+
+			$remove = false;
 			foreach ($this->filterExitCallbacks AS $callback) {
-				$result = (int) call_user_func($callback, $record, $this);
+				$result = (int) call_user_func($callback, $entryRecord, false, $this);
+				if ($result & self::SKIP) {
+					$remove = true;
+				}
+
 				if ($result & self::STOP) {
 					break;
 				}
 			}
 
-			$r = $this->trace[$record->id];
-			$r->deltaTime = $record->time - $r->time;
-			$r->deltaMemory = $record->memory - $r->memory;
+			if ($remove) {
+				unset($this->trace[$record->id]);
+			}
 		}
 	}
 
@@ -693,20 +737,24 @@ class XDebugTrace extends Object implements IBarPanel
 	/**
 	 * Register own filter callback.
 	 *
-	 * @param  callback(stdClass $record, \Panel\XDebugTrace $this)
+	 * @param  callback(stdClass $record, bool $onEntry, \Panel\XDebugTrace $this)
 	 * @param  int bitmask of self::FILTER_*
 	 */
-	public function addFilterCallback($callback, $flags = self::FILTER_ENTRY)
+	public function addFilterCallback($callback, $flags = NULL)
 	{
 		$flags = (int) $flags;
 
-		// Entry records filter
-		if ($flags & self::FILTER_ENTRY) {
-			if ($flags & self::FILTER_REPLACE) {
-				$this->filterEntryCallbacks = array();
-			}
+		if ($flags & self::FILTER_REPLACE_ENTRY) {
+			$this->filterEntryCallbacks = array();
+		}
 
-			if ($flags & self::FILTER_APPEND) {
+		if ($flags & self::FILTER_REPLACE_EXIT) {
+			$this->filterExitCallbacks = array();
+		}
+
+		// Called when entry records came
+		if (($flags & self::FILTER_ENTRY) || !($flags & self::FILTER_EXIT)) {
+			if ($flags & self::FILTER_APPEND_ENTRY) {
 				$this->filterEntryCallbacks[] = $callback;
 
 			} else {
@@ -714,19 +762,30 @@ class XDebugTrace extends Object implements IBarPanel
 			}
 		}
 
-		// Exit records filter
+		// Called when exit records came
 		if ($flags & self::FILTER_EXIT) {
-			if ($flags & self::FILTER_REPLACE) {
-				$this->filterExitCallbacks = array();
-			}
-
-			if ($flags & self::FILTER_APPEND) {
+			if ($flags & self::FILTER_APPEND_EXIT) {
 				$this->filterExitCallbacks[] = $callback;
 
 			} else {
 				array_unshift($this->filterExitCallbacks, $callback);
 			}
 		}
+	}
+
+
+
+	/**
+	 * Replace all filter callbacks by this one.
+	 *
+	 * @param  callback(stdClass $record, bool $onEntry, \Panel\XDebugTrace $this)
+	 * @param  int bitmask of self::FILTER_*
+	 */
+	public function setFilterCallback($callback, $flags = NULL)
+	{
+		$flags = ((int) $flags) | self::FILTER_REPLACE;
+
+		return $this->addFilterCallback($callback, $flags);
 	}
 
 }
