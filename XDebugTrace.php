@@ -121,6 +121,12 @@ class XDebugTrace extends Object implements IBarPanel
 	 * @var reference to $this->traces
 	 */
 	protected $trace;
+	
+	
+	/**
+	 * @var array of string trace titles
+	 */
+	protected $titles = array();	 	 	
 
 
 	/**
@@ -268,14 +274,18 @@ class XDebugTrace extends Object implements IBarPanel
 	/* ~~~ Start/Stop tracing part ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 	/**
 	 * Start or continue tracing.
+	 *
+	 * @param  string|NULL trace title	 	 
 	 */
-	public function start()
+	public function start($title = NULL)
 	{
 		if (!$this->isError) {
 			if ($this->state === self::STATE_STOP) {
+				$this->titles = array($title);
 				xdebug_start_trace($this->traceFile, XDEBUG_TRACE_COMPUTERIZED);
 
 			} elseif ($this->state === self::STATE_PAUSE) {
+				$this->titles[] = $title;
 				xdebug_start_trace($this->traceFile, XDEBUG_TRACE_COMPUTERIZED | XDEBUG_TRACE_APPEND);
 			}
 
@@ -551,6 +561,7 @@ class XDebugTrace extends Object implements IBarPanel
 			$template = $this->getTemplate();
 			$template->traces = $this->traces;
 			$template->indents = $this->indents;
+			$template->titles = $this->titles;
 		}
 
 		if ($this->isError) {

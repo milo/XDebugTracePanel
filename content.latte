@@ -36,6 +36,9 @@
 		<table style="width: 100%">
 			{assign $indent = $indents[$traceNo]}
 			<thead>
+				<tr n:ifset="$titles[$traceNo]">
+					<th colspan="6"><h2>{$titles[$traceNo]}</h2></th>
+				</tr>
 				<tr>
 					<th>ID</th>
 					<th>Level</th>
