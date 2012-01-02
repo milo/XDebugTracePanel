@@ -228,12 +228,18 @@ class XDebugTrace extends Object implements IBarPanel
 
 
 
+	/**
+	 * Shortcut for \Panel\XDebugTrace::getInstance()->method()
+	 * as \Panel\XDebugTrace::callMethod();
+	 */
 	public static function __callStatic($name, $args)
 	{
-		if (self::$instance !== NULL && preg_match('/^call([A-Z].*)/', $name, $match)) {
+		$instance = self::getInstance();
+
+		if (preg_match('/^call([A-Z].*)/', $name, $match)) {
 			$method = lcfirst($match[1]);
-			if (method_exists(self::$instance, $method)) {
-				return call_user_func_array(array(self::$instance, $method), $args);
+			if (method_exists($instance, $method)) {
+				return call_user_func_array(array($instance, $method), $args);
 			}
 		}
 
