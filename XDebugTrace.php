@@ -121,12 +121,12 @@ class XDebugTrace extends Object implements IBarPanel
 	 * @var reference to $this->traces
 	 */
 	protected $trace;
-	
-	
+
+
 	/**
 	 * @var array of string trace titles
 	 */
-	protected $titles = array();	 	 	
+	protected $titles = array();
 
 
 	/**
@@ -275,7 +275,7 @@ class XDebugTrace extends Object implements IBarPanel
 	/**
 	 * Start or continue tracing.
 	 *
-	 * @param  string|NULL trace title	 	 
+	 * @param  string|NULL trace title
 	 */
 	public function start($title = NULL)
 	{
@@ -313,7 +313,7 @@ class XDebugTrace extends Object implements IBarPanel
 	 */
 	public function stop()
 	{
-		if ($this->state !== self::STATE_STOP) {
+		if ($this->state === self::STATE_RUN) {
 			xdebug_stop_trace();
 		}
 
