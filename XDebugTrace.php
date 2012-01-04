@@ -12,42 +12,6 @@ use
 /**
  * XDebug Trace panel for Nette 2.0 framework.
  *
- * <code>
- * // Register panel in bootstrap.php
- * // xdebug_start_trace() always add .xt extension
- * $xdebugPanel = new \Panel\XDebugTrace(TMP_DIR . '/xdebug_trace');
- * \Nette\Diagnostics\Debugger::addPanel($xdebugPanel);
- *
- * // And somewhere in code
- * $xdebugPanel->start();
- * ...
- * ...
- * ...
- * $xdebugPanel->pause();
- *
- *
- *
- * $xdebugPanel->start();
- * ...
- * ...
- * ...
- * $xdebugPanel->stop();
- *
- * // Shortcuts for start(), pause(), stop()
- * \Panel\XDebugTrace::callStart();
- * \Panel\XDebugTrace::callPause();
- * \Panel\XDebugTrace::callStop();
- *
- * // See \Panel\XDebugTrace::defaultFilterCb() for filtering options.
- * $xdebugPanel->addFilterCallback(
- *     function($record) {
- *        if ($record->function === 'dontCareFunction') {
- *            return \Panel\XDebugTrace::SKIP;
- *        }
- *    }
- * );
- * </code>
- *
  * @author Miloslav Hůla
  * @version 0.3-beta2
  * @see http://github.com/mil0/XDebugTracePanel
