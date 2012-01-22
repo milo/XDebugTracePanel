@@ -244,6 +244,10 @@ class XDebugTrace extends Object implements IBarPanel
 	public function start($title = NULL)
 	{
 		if (!$this->isError) {
+			if ($this->state === self::STATE_RUN) {
+				$this->pause();
+			}
+
 			if ($this->state === self::STATE_STOP) {
 				$this->titles = array($title);
 				xdebug_start_trace($this->traceFile, XDEBUG_TRACE_COMPUTERIZED);
