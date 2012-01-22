@@ -13,7 +13,7 @@ use
  * XDebug Trace panel for Nette 2.0 framework.
  *
  * @author Miloslav Hůla
- * @version 0.3-beta2
+ * @version 0.3-beta3
  * @see http://github.com/mil0/XDebugTracePanel
  * @licence LGPL
  */
