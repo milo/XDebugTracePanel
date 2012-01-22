@@ -293,8 +293,8 @@ class XDebugTrace extends Object implements IBarPanel
 	public function getErrorTemplate()
 	{
 		if ($this->lazyErrorTemplate === NULL) {
-			$this->lazyErrorTemplate = new FileTemplate(dirname(__FILE__) . '/error.latte');
-			$this->lazyErrorTemplate->registerFilter(new Engine());
+			$this->lazyErrorTemplate = new FileTemplate(__DIR__ . '/error.latte');
+			$this->lazyErrorTemplate->registerFilter(new Engine);
 		}
 
 		return $this->lazyErrorTemplate;
@@ -308,9 +308,13 @@ class XDebugTrace extends Object implements IBarPanel
 	public function getTemplate()
 	{
 		if ($this->lazyTemplate === NULL) {
-			$this->lazyTemplate = new FileTemplate(dirname(__FILE__) . '/content.latte');
-			$this->lazyTemplate->registerFilter(new Engine());
-			$this->lazyTemplate->registerHelperLoader('Nette\Templating\DefaultHelpers::loader');
+			$this->lazyTemplate = new FileTemplate(__DIR__ . '/content.latte');
+			$this->lazyTemplate->registerFilter(new Engine);
+
+			// Before [https://github.com/nette/nette/commit/ba80a1923e39cd56c3c35a6bbe26d44f1c52ff04] compatibility
+			$helpersClass = class_exists('Nette\Templating\Helpers') ? 'Nette\Templating\Helpers::loader' : 'Nette\Templating\DefaultHelpers::loader';
+			$this->lazyTemplate->registerHelperLoader($helpersClass);
+
 			$this->lazyTemplate->registerHelper('time', array($this, 'timeHelper'));
 			$this->lazyTemplate->registerHelper('timeClass', array($this, 'timeClassHelper'));
 			$this->lazyTemplate->registerHelper('basename', array($this, 'basenameHelper'));
