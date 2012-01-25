@@ -2,7 +2,7 @@
 
 /*
 	Examples of using XDebugTrace panel for Nette 2.0
-	http://github.com/mil0/XDebugTracePanel
+	http://github.com/milo/XDebugTracePanel
 
 1. INSTALLATION
 	Installation is easy. Copy XDebugTrace.php and *.latte templates into

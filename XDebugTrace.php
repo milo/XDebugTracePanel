@@ -14,7 +14,7 @@ use
  *
  * @author Miloslav Hůla
  * @version 0.3-beta3
- * @see http://github.com/mil0/XDebugTracePanel
+ * @see http://github.com/milo/XDebugTracePanel
  * @licence LGPL
  */
 class XDebugTrace extends Object implements IBarPanel
