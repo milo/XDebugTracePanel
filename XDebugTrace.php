@@ -3,21 +3,18 @@
 namespace Panel;
 
 use
-	Nette\Object,
-	Nette\Diagnostics\IBarPanel,
-	Nette\Diagnostics\Debugger,
 	Nette\Templating\FileTemplate,
 	Nette\Latte\Engine;
 
 /**
  * XDebug Trace panel for Nette 2.0 framework.
  *
- * @author Miloslav Hůla
- * @version 0.3-beta3
- * @see http://github.com/milo/XDebugTracePanel
+ * @author  Miloslav Hůla
+ * @version 0.3-beta4
+ * @see     http://github.com/milo/XDebugTracePanel
  * @licence LGPL
  */
-class XDebugTrace extends Object implements IBarPanel
+class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 {
 	/** Tracing states */
 	const
@@ -54,7 +51,7 @@ class XDebugTrace extends Object implements IBarPanel
 	/**
 	 * @var bool delete trace file in destructor or not
 	 */
-	public $deleteTraceFile = false;
+	public $deleteTraceFile = FALSE;
 
 
 	/**
@@ -108,7 +105,7 @@ class XDebugTrace extends Object implements IBarPanel
 	/**
 	 * @var bool internal class error occured, error template will be rendered
 	 */
-	protected $isError = false;
+	protected $isError = FALSE;
 
 
 	/**
@@ -144,7 +141,7 @@ class XDebugTrace extends Object implements IBarPanel
 	/**
 	 * @var bool skip PHP internals functions when parsing
 	 */
-	protected $skipInternals = true;
+	protected $skipInternals = TRUE;
 
 
 	/**
@@ -165,18 +162,17 @@ class XDebugTrace extends Object implements IBarPanel
 	 * @param  bool skip PHP internal functions when parsing trace file
 	 * @throws \Nette\InvalidStateException
 	 */
-	public function __construct($traceFile, $skipInternals = true)
+	public function __construct($traceFile, $skipInternals = TRUE)
 	{
 		if (self::$instance !== NULL) {
 			throw new \Nette\InvalidStateException('Class ' . get_class($this) . ' can be instantized only once, xdebug_start_trace() can run only once.');
 		}
-
 		self::$instance = $this;
 
 		if (!extension_loaded('xdebug')) {
 			$this->setError('XDebug extension is not loaded');
 
-		} elseif (@file_put_contents($traceFile . '.xt', '') === false) {
+		} elseif (@file_put_contents($traceFile . '.xt', '') === FALSE) {
 			$this->setError("Cannot create trace file '$traceFile.xt'", error_get_last());
 
 		} else {
@@ -403,7 +399,7 @@ class XDebugTrace extends Object implements IBarPanel
 	 */
 	protected function setError($message, array $lastError = NULL)
 	{
-		$this->isError = true;
+		$this->isError = TRUE;
 		$this->errMessage = $message;
 
 		if ($lastError !== NULL) {
@@ -456,10 +452,10 @@ class XDebugTrace extends Object implements IBarPanel
 			return $this->renderError();
 		}
 
-		$parsingStart = microtime(true);
+		$parsingStart = microtime(TRUE);
 
 		$fd = @fopen($this->traceFile . '.xt', 'rb');
-		if ($fd === false) {
+		if ($fd === FALSE) {
 			$this->setError("Cannot open trace file '$this->traceFile.xt'", error_get_last());
 
 		} elseif (!($traceFileSize = filesize($this->traceFile . '.xt'))) {
@@ -472,7 +468,7 @@ class XDebugTrace extends Object implements IBarPanel
 			$this->setError('Trace file format line mischmasch');
 
  		} else {
-			while (($line = fgets($fd, self::$traceLineLength)) !== false) {
+			while (($line = fgets($fd, self::$traceLineLength)) !== FALSE) {
 				if (strncmp($line, 'TRACE START', 11) === 0) {	// TRACE START line
 					$this->openTrace();
 
@@ -489,7 +485,7 @@ class XDebugTrace extends Object implements IBarPanel
 							'time' => (float) $cols[3],
 							'memory' => (float) $cols[4],
 						);
-						$this->addRecord($record, true);
+						$this->addRecord($record, TRUE);
 */
 						continue;
 
@@ -498,7 +494,7 @@ class XDebugTrace extends Object implements IBarPanel
 							'level' => (int) $cols[0],
 							'id' => (float) $cols[1],
 							'isEntry' => !$cols[2],
-							'exited' => false,
+							'exited' => FALSE,
 							'time' => (float) $cols[3],
 							'exitTime' => NULL,
 							'deltaTime' => NULL,
@@ -540,7 +536,7 @@ class XDebugTrace extends Object implements IBarPanel
 			return $this->renderError();
 		}
 
-		$template->parsingTime = microtime(true) - $parsingStart;
+		$template->parsingTime = microtime(TRUE) - $parsingStart;
 		$template->traceFileSize = $traceFileSize;
 
 		ob_start();
@@ -574,11 +570,11 @@ class XDebugTrace extends Object implements IBarPanel
 		if ($this->trace !== NULL) {
 			foreach ($this->trace AS $id => $record) {
 				if (!$record->exited) {	// last chance to filter non-exited records by FILTER_EXIT callback
-					$remove = false;
+					$remove = FALSE;
 					foreach ($this->filterExitCallbacks AS $callback) {
-						$result = (int) call_user_func($callback, $record, false, $this);
+						$result = (int) call_user_func($callback, $record, FALSE, $this);
 						if ($result & self::SKIP) {
-							$remove = true;
+							$remove = TRUE;
 						}
 
 						if ($result & self::STOP) {
@@ -627,11 +623,11 @@ class XDebugTrace extends Object implements IBarPanel
 	protected function addRecord(\stdClass $record)
 	{
 		if ($record->isEntry) {
-			$add = true;
+			$add = TRUE;
 			foreach ($this->filterEntryCallbacks AS $callback) {
-				$result = (int) call_user_func($callback, $record, true, $this);
+				$result = (int) call_user_func($callback, $record, TRUE, $this);
 				if ($result & self::SKIP) {
-					$add = false;
+					$add = FALSE;
 				}
 
 				if ($result & self::STOP) {
@@ -646,17 +642,17 @@ class XDebugTrace extends Object implements IBarPanel
 		} elseif (isset($this->trace[$record->id])) {
 			$entryRecord = $this->trace[$record->id];
 
-			$entryRecord->exited = true;
+			$entryRecord->exited = TRUE;
 			$entryRecord->exitTime = $record->time;
 			$entryRecord->deltaTime = $record->time - $entryRecord->time;
 			$entryRecord->exitMemory = $record->memory;
 			$entryRecord->deltaMemory = $record->memory - $entryRecord->memory;
 
-			$remove = false;
+			$remove = FALSE;
 			foreach ($this->filterExitCallbacks AS $callback) {
-				$result = (int) call_user_func($callback, $entryRecord, false, $this);
+				$result = (int) call_user_func($callback, $entryRecord, FALSE, $this);
 				if ($result & self::SKIP) {
-					$remove = true;
+					$remove = TRUE;
 				}
 
 				if ($result & self::STOP) {
