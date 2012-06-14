@@ -15,13 +15,14 @@
 2. REGISTER PANEL
 	In next step, register panel in bootstrap.php. You need a web server
 	writable directory for temporary trace file. In XDebugTrace constructor
-	provide only file name without extension. xdebug_trace_start() always
-	add .xt extension.
+	provide path to temporary trace file.
 */
 
 define('TMP_DIR', __DIR__ . '/../temp');
 $xdebugTrace = new \Panel\XDebugTrace(TMP_DIR . '/xdebug_trace');
 \Nette\Diagnostics\Debugger::addPanel($xdebugTrace);
+
+
 
 /*
 3. START-PAUSE-STOP TRACING
@@ -46,6 +47,8 @@ $xdebugTrace->stop();
 \Panel\XDebugTrace::callPause();
 \Panel\XDebugTrace::callStop();
 
+
+
 /*
 4. OWN TEMPLATES
 	You can use all of \Nette\Templating\FileTemplate advantages and set own
@@ -54,14 +57,50 @@ $xdebugTrace->stop();
 $template = $xdebugTrace->getTemplate();
 $template->setFile('templates/my-template.latte');
 
+
+
 /*
 5. TRACE RECORDS FILTERING
 	Filtering is a most ambitious work with this panel. Without this, HTML
 	output can be huge (megabytes). XDebugTrace panel provide simple mechanism
-	for trace records filtering. You can register own filtering callbacks.
+	for trace records filtering. You can use prepared filters (methods starts
+	by 'trace' prefix).
+*/
+// Trace everything. Be careful, HTML output can be huge!
+$xdebugTrace->traceAll();
 
-	At first, take a look on XDebugTrace::defaultFilterCb() source code. This is
-	a default filtering callback. Is used when you dont register own one.
+
+// Trace single function...
+$xdebugTrace->traceFunction('weirdFunction');
+// ... and all the inside calls too...
+$xdebugTrace->traceFunction('weirdFunction', TRUE);
+// ... and PHP internals too.
+$xdebugTrace->traceFunction('weirdFunction', TRUE, TRUE);
+
+
+// Trace static method...
+$xdebugTrace->traceFunction('MyClass::weirdFunction');
+// ... or dynamic...
+$xdebugTrace->traceFunction('MyClass->weirdFunction');
+// ... or both.
+$xdebugTrace->traceFunction(array('MyClass', 'weirdFunction'));
+
+
+// Trace functions by PCRE regular expression
+$xdebugTrace->traceFunctionRe('/^weird/i');
+
+
+// Trace only functions running over the 15 miliseconds...
+$xdebugTrace->traceDeltaTime('15ms');
+// ... or function which consumes more then 20kB.
+$xdebugTrace->traceDeltaMemory('20kB');
+
+
+/*
+	If you want use own filters, at first, take a look on
+	XDebugTrace::defaultFilterCb() source code. This is	a default filtering
+	callback. Is used when you don't register own one. And take a look on
+	XDebugTrace::trace.....() methods source code.
 
 	At second, is good to know xdebug trace file structure:
 
@@ -71,7 +110,7 @@ $template->setFile('templates/my-template.latte');
 		[Exit record]
 		level   id  1   time    memory
 
-		[Example]
+		[An example]
 		3    121    0    0.012    401442    myFunction - myFunction() enter
 		4    122    0    0.014    401442    strpos     - strpos() enter
 		4    122    1    0.015    401454               - strpos() exit
@@ -88,59 +127,26 @@ $template->setFile('templates/my-template.latte');
 	$flags is a bitmask of \Panel\XDebugTrace::FILTER_* constants.
 		FILTER_ENTRY - call filter on entry records (default)
 		FILTER_EXIT  - call filter on exit records
-		FILTER_BOTH  - same as FILTER_ENTRY | FILTER_EXIT
+		FILTER_BOTH  = FILTER_ENTRY | FILTER_EXIT
 
 		FILTER_APPEND_ENTRY - append filter behind others (default is prepend)
 		FILTER_APPEND_EXIT  - append filter behind others (default is prepend)
-		FILTER_APPEND       - same as FILTER_APPEND_ENTRY | FILTER_APPEND_EXIT
+		FILTER_APPEND       = FILTER_APPEND_ENTRY | FILTER_APPEND_EXIT
 
 		FILTER_REPLACE_ENTRY - remove all entry filters
 		FILTER_REPLACE_EXIT  - remove all exit filters
-		FILTER_REPLACE       - same as FILTER_REPLACE_ENTRY | FILTER_REPLACE_EXIT
+		FILTER_REPLACE       = FILTER_REPLACE_ENTRY | FILTER_REPLACE_EXIT
 
 	Your callback should return bitmask of flags:
 		\Panel\XDebugTrace::SKIP - skip this record
 		\Panel\XDebugTrace::STOP - don't call followed filters
 
-	Examples follow.
+	or return NULL. NULL means record passed and will be printed in bar.
+
+	Simple example follows.
 */
-
-// Display only count() function traces
-$xdebugTrace->setFilterCallback(function($record) {
-	if ($record->function !== 'count') {
-		return \Panel\XDebugTrace::SKIP;
-	}
-});
-
-
-
-// We want display every Nette\Utils\LimitedScope::load() calling in detail.
-// Note the second $onEntry parametr. Is TRUE for entry recods, FALSE for exit.
-// Note the FILTER_BOTH flag. It menans: "Call filter on entry and exit records"
-$xdebugTrace->setFilterCallback(function($record, $onEntry){
-	static $cnt = 0;
-
-	if ($record->function === 'Nette\Utils\LimitedScope::load') {
-		$cnt += $onEntry ? 1 : -1;
-		return NULL;
-	}
-
-	return $cnt ? NULL : \Panel\XDebugTrace::SKIP;
-}, \Panel\XDebugTrace::FILTER_BOTH);
-
-
 
 // Display everything except for internal functions
 $xdebugTrace->setFilterCallback(function($record){
     return $record->isInternal ? \Panel\XDebugTrace::SKIP : NULL;
 });
-
-
-
-// Display only functions which run longer then 1 ms.
-// Must be registered with FILTER_EXIT. ENTRY records have deltaTime = NULL
-$xdebugTrace->setFilterCallback(function($record) {
-    if ($record->deltaTime < 0.001) {
-        return \Panel\XDebugTrace::SKIP;
-    }
-}, \Panel\XDebugTrace::FILTER_EXIT);

@@ -3,6 +3,7 @@
 namespace Panel;
 
 use
+	Nette,
 	Nette\Templating\FileTemplate,
 	Nette\Latte\Engine;
 
@@ -139,9 +140,15 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 	/**
-	 * @var bool skip PHP internals functions when parsing
+	 * @var array of bool  default filtering callback setting
 	 */
-	protected $skipInternals = TRUE;
+	protected $skipOver = array(
+		'phpInternals' => TRUE,
+		'XDebugTrace' => TRUE,
+		'Nette' => TRUE,
+		'callbacks' => TRUE,
+		'includes' => TRUE,
+	);
 
 
 	/**
@@ -162,12 +169,16 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 * @param  bool skip PHP internal functions when parsing trace file
 	 * @throws \Nette\InvalidStateException
 	 */
-	public function __construct($traceFile, $skipInternals = TRUE)
+	public function __construct($traceFile)
 	{
 		if (self::$instance !== NULL) {
 			throw new \Nette\InvalidStateException('Class ' . get_class($this) . ' can be instantized only once, xdebug_start_trace() can run only once.');
 		}
 		self::$instance = $this;
+
+		if (substr_compare($traceFile, '.xt', -3, 3, TRUE) === 0) {
+			$traceFile = substr($traceFile, 0, -3);
+		}
 
 		if (!extension_loaded('xdebug')) {
 			$this->setError('XDebug extension is not loaded');
@@ -179,7 +190,6 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 			$this->traceFile = $traceFile;
 		}
 
-		$this->skipInternals($skipInternals);
 		$this->addFilterCallback(array($this, 'defaultFilterCb'));
 	}
 
@@ -670,50 +680,79 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 	/* ~~~ Trace records filtering ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 	/**
-	 * Setting of default filter callback.
-	 * @param  bool skip PHP internal functions
+	 * Setting of default filtering callback.
+	 *
+	 * @param  bool skip or not
+	 * @param  string
+	 * @return Panel\XDebugTrace
 	 */
-	public function skipInternals($skip)
+	public function skip($type, $skip)
 	{
-		$this->skipInternals = $skip;
+		if (!array_key_exists($type, $this->skipOver)) {
+			throw new Nette\InvalidArgumentException("Unknown skip type '$type'. Use one of [" . implode(', ', array_keys($this->skipOver)) . ']');
+		}
+
+		$this->skipOver[$type] = (bool) $skip;
+		return $this;
 	}
 
 
 
 	/**
-	 * Default filter
+	 * Shortcut to self::skip('phpInternals', bool)
+	 *
+	 * @param  bool skip PHP internal functions?
+	 * @return Panel\XDebugTrace
+	 */
+	public function skipInternals($skip)
+	{
+		return $this->skip('phpInternals', $skip);
+	}
+
+
+
+	/**
+	 * Default filtering callback.
 	 *
 	 * @param  stdClass trace file record
 	 * @return int bitmask of self::SKIP, self::STOP
 	 */
 	protected function defaultFilterCb(\stdClass $record)
 	{
-		if ($this->skipInternals && $record->isInternal) {
+		if ($this->skipOver['phpInternals'] && $record->isInternal) {
 			return self::SKIP;
 		}
 
-		if ($record->filename === __FILE__) {
-			return self::SKIP;
+		if ($this->skipOver['XDebugTrace']) {
+			if ($record->filename === __FILE__) {
+				return self::SKIP;
+			}
+
+			if (strncmp($record->function, 'Panel\\XDebugTrace::', 19) === 0) {
+				return self::SKIP;
+			}
+
+			if (strncmp($record->function, 'Panel\\XDebugTrace->', 19) === 0) {
+				return self::SKIP;
+			}
 		}
 
-		if (strncmp($record->function, 'Nette\\', 6) === 0) {
-			return self::SKIP;
+		if ($this->skipOver['Nette']) {
+			if (strncmp($record->function, 'Nette\\', 6) === 0) {
+				return self::SKIP;
+			}
 		}
 
-		if (strncmp($record->function, 'Panel\\XDebugTrace::', 19) === 0) {
-			return self::SKIP;
+		if ($this->skipOver['callbacks']) {
+			if ($record->function === 'callback' || $record->function === '{closure}') {
+				return self::SKIP;
+			}
 		}
 
-		if (strncmp($record->function, 'Panel\\XDebugTrace->', 19) === 0) {
-			return self::SKIP;
-		}
-
-		if (strcmp($record->function, 'callback') === 0) {
-			return self::SKIP;
-		}
-
-		if ($record->includeFile !== NULL) {
-			return self::SKIP;
+		if ($this->skipOver['includes']) {
+			if ($record->includeFile !== NULL) {
+				return self::SKIP;
+			}
 		}
 	}
 
@@ -769,8 +808,163 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	public function setFilterCallback($callback, $flags = NULL)
 	{
 		$flags = ((int) $flags) | self::FILTER_REPLACE;
-
 		return $this->addFilterCallback($callback, $flags);
+	}
+
+
+
+	/* ~~~ Filtering callback shortcuts ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+	/**
+	 * Trace all.
+	 */
+	public function traceAll()
+	{
+		$cb = function () {
+			return NULL;
+		};
+
+		$this->setFilterCallback($cb, self::FILTER_BOTH);
+	}
+
+
+
+	/**
+	 * Trace function by name.
+	 *
+	 * @param  string|array name of function or pair array(class, method)
+	 * @param  bool show inside function trace too
+	 * @param  bool show internals in inside function trace
+	 */
+	public function traceFunction($name, $inDetail = FALSE, $showInternals = FALSE)
+	{
+		if (is_array($name)) {
+			$name1 = implode('::', $name);
+			$name2 = implode('->', $name);
+		} else {
+			$name1 = $name2 = (string) $name;
+		}
+
+		$cb = function(\stdClass $record, $onEntry) use ($name1, $name2, $inDetail, $showInternals) {
+			static $cnt = 0;
+
+			if ($record->function === $name1 || $record->function === $name2) {
+				$cnt += $onEntry ? 1 : -1;
+				return NULL;
+			}
+
+			return ($inDetail && $cnt && ($showInternals || !$record->isInternal)) ? NULL : XDebugTrace::SKIP;
+		};
+
+		$this->setFilterCallback($cb, self::FILTER_BOTH);
+	}
+
+
+
+	/**
+	 * Trace function which name is expressed by PCRE reqular expression.
+	 *
+	 * @param  string regular expression
+	 * @param  bool show inside function trace too
+	 * @param  bool show internals in inside function trace
+	 */
+	public function traceFunctionRe($re, $inDetail = FALSE, $showInternals = FALSE)
+	{
+		$cb = function(\stdClass $record, $onEntry) use ($re, $inDetail, $showInternals) {
+			static $cnt = 0;
+
+			if (preg_match($re, $record->function)) {
+				$cnt += $onEntry ? 1 : -1;
+				return NULL;
+			}
+
+			return ($inDetail && $cnt && ($showInternals || !$record->isInternal)) ? NULL : XDebugTrace::SKIP;
+		};
+
+		$this->setFilterCallback($cb, self::FILTER_BOTH);
+	}
+
+
+
+	/**
+	 * Trace functions running over/under the time.
+	 *
+	 * @param  float delta time
+	 * @param  bool  TRUE = over the delta time, FALSE = under the delta time
+	 */
+	public function traceDeltaTime($delta, $over = TRUE)
+	{
+		if (is_string($delta)) {
+			static $multipliers = array(
+				's' => 1,
+				'ms' => 0.001,
+				'us' => 0.000001,
+				'ns' => 0.000000001,
+			);
+
+			foreach ($multipliers as $suffix => $multipler) {
+				if (substr_compare($delta, $suffix, -2, 2, TRUE) === 0) {
+					$delta = substr($delta, 0, -2) * $multipler;
+					break;
+				}
+			}
+		}
+		$delta = (float) $delta;
+
+		$cb = function(\stdClass $record) use ($delta, $over) {
+			if ($over) {
+				if ($record->deltaTime < $delta) {
+        			return XDebugTrace::SKIP;
+        		}
+        	} else {
+				if ($record->deltaTime > $delta) {
+        			return XDebugTrace::SKIP;
+        		}
+        	}
+		};
+
+		$this->setFilterCallback($cb, self::FILTER_EXIT);
+	}
+
+
+
+	/**
+	 * Trace functions which consumes over/under the memory.
+	 *
+	 * @param  float delta memory
+	 * @param  bool  TRUE = over the delta memory, FALSE = under the delta memory
+	 */
+	public function traceDeltaMemory($delta, $over = TRUE)
+	{
+		if (is_string($delta)) {
+			static $multipliers = array(
+				'b' => 1,
+				'kb' => 1000,
+				'mb' => 1000000,
+				'gb' => 1000000000,
+			);
+
+			foreach ($multipliers as $suffix => $multipler) {
+				if (substr_compare($delta, $suffix, -2, 2, TRUE) === 0) {
+					$delta = substr($delta, 0, -2) * $multipler;
+					break;
+				}
+			}
+		}
+		$delta = (float) $delta;
+
+		$cb = function(\stdClass $record) use ($delta, $over) {
+			if ($over) {
+				if ($record->deltaMemory < $delta) {
+        			return XDebugTrace::SKIP;
+        		}
+        	} else {
+				if ($record->deltaMemory > $delta) {
+        			return XDebugTrace::SKIP;
+        		}
+        	}
+		};
+
+		$this->setFilterCallback($cb, self::FILTER_EXIT);
 	}
 
 }
