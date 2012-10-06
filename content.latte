@@ -38,7 +38,7 @@
 
 	<div class="nette-inner" n:inner-foreach="$traces AS $traceNo => $trace">
 		<table style="width: 100%">
-			{assign $indent = $indents[$traceNo]}
+			{var $indent = $indents[$traceNo]}
 			<thead>
 				<tr n:ifset="$titles[$traceNo]">
 					<th colspan="6"><h2>{$titles[$traceNo]}</h2></th>
