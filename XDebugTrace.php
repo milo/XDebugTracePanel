@@ -11,7 +11,7 @@ use
  * XDebug Trace panel for Nette 2.0 framework.
  *
  * @author  Miloslav Hůla
- * @version 0.3-beta4
+ * @version 0.3-beta5
  * @see     http://github.com/milo/XDebugTracePanel
  * @licence LGPL
  */
@@ -23,12 +23,10 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		STATE_RUN = 1,
 		STATE_PAUSE = 2;
 
-
 	/** Filter callback action bitmask */
 	const
 		STOP = 0x01,
 		SKIP = 0x02;
-
 
 	/** Adding filter bitmask flags */
 	const
@@ -42,102 +40,85 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		FILTER_REPLACE_EXIT = 32,
 		FILTER_REPLACE = 48;
 
-
 	/**
 	 * @var int maximal length of line in trace file
 	 */
 	public static $traceLineLength = 4096;
-
 
 	/**
 	 * @var bool delete trace file in destructor or not
 	 */
 	public $deleteTraceFile = FALSE;
 
-
 	/**
 	 * @var \Panel\XDebugTrace
 	 */
 	private static $instance;
-
 
 	/**
 	 * @var int tracing state
 	 */
 	private $state = self::STATE_STOP;
 
-
 	/**
 	 * @var string path to trace file
 	 */
 	private $traceFile;
-
 
 	/**
 	 * @var array of stdClass
 	 */
 	protected $traces = array();
 
-
 	/**
 	 * @var reference to $this->traces
 	 */
 	protected $trace;
-
 
 	/**
 	 * @var array of string trace titles
 	 */
 	protected $titles = array();
 
-
 	/**
 	 * @var array of level => indent size
 	 */
 	protected $indents = array();
-
 
 	/**
 	 * @var reference to $this->indents
 	 */
 	protected $indent;
 
-
 	/**
 	 * @var bool internal class error occured, error template will be rendered
 	 */
 	protected $isError = FALSE;
-
 
 	/**
 	 * @var string
 	 */
 	protected $errMessage = '';
 
-
 	/**
 	 * @var string
 	 */
 	protected $errFile;
-
 
 	/**
 	 * @var int
 	 */
 	protected $errLine;
 
-
 	/**
 	 * @var array of callbacks called when parsing entry record from trace file
 	 */
 	protected $filterEntryCallbacks = array();
 
-
 	/**
 	 * @var array of callbacks called when parsing exit record from trace file
 	 */
 	protected $filterExitCallbacks = array();
-
 
 	/**
 	 * @var array of bool  default filtering callback setting
@@ -146,16 +127,15 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		'phpInternals' => TRUE,
 		'XDebugTrace' => TRUE,
 		'Nette' => TRUE,
+		'Composer' => TRUE,
 		'callbacks' => TRUE,
 		'includes' => TRUE,
 	);
-
 
 	/**
 	 * @var \Nette\Templating\FileTemplate
 	 */
 	protected $lazyTemplate;
-
 
 	/**
 	 * @var \Nette\Templating\FileTemplate
@@ -464,12 +444,11 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 		$parsingStart = microtime(TRUE);
 
-		$fd = @fopen($this->traceFile . '.xt', 'rb');
-		if ($fd === FALSE) {
-			$this->setError("Cannot open trace file '$this->traceFile.xt'", error_get_last());
+		if (!($traceFileSize = filesize($this->traceFile . '.xt'))) {
+			// Tracing didn't start probably.
 
-		} elseif (!($traceFileSize = filesize($this->traceFile . '.xt'))) {
-			$this->setError("Trace file '$this->traceFile.xt' is empty");
+		} elseif (($fd = @fopen($this->traceFile . '.xt', 'rb')) === FALSE) {
+			$this->setError("Cannot open trace file '$this->traceFile.xt'", error_get_last());
 
 		} elseif (!preg_match('/^Version: 2\..*/', (string) fgets($fd, self::$traceLineLength))) {
 			$this->setError('Trace file version line mischmasch');
@@ -535,17 +514,16 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
  			}
 
  			$this->closeTrace();	// in case of non-complete trace file
-
-			$template = $this->getTemplate();
-			$template->traces = $this->traces;
-			$template->indents = $this->indents;
-			$template->titles = $this->titles;
 		}
 
 		if ($this->isError) {
 			return $this->renderError();
 		}
 
+		$template = $this->getTemplate();
+		$template->traces = $this->traces;
+		$template->indents = $this->indents;
+		$template->titles = $this->titles;
 		$template->parsingTime = microtime(TRUE) - $parsingStart;
 		$template->traceFileSize = $traceFileSize;
 
@@ -682,8 +660,8 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Setting of default filtering callback.
 	 *
-	 * @param  bool skip or not
 	 * @param  string
+	 * @param  bool skip or not
 	 * @return Panel\XDebugTrace
 	 */
 	public function skip($type, $skip)
@@ -739,6 +717,12 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 		if ($this->skipOver['Nette']) {
 			if (strncmp($record->function, 'Nette\\', 6) === 0) {
+				return self::SKIP;
+			}
+		}
+
+		if ($this->skipOver['Composer']) {
+			if (strncmp($record->function, 'Composer\\', 9) === 0) {
 				return self::SKIP;
 			}
 		}
