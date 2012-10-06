@@ -1,102 +1,128 @@
-<?php
-
-/*
-	Examples of using XDebugTrace panel for Nette 2.0
-	http://github.com/milo/XDebugTracePanel
+Examples of using XDebugTrace panel for Nette 2.0
+http://github.com/milo/XDebugTracePanel
 
 1. INSTALLATION
-	Installation is easy. Copy XDebugTrace.php and *.latte templates into
-	directory, where RobotLoader have access. E.g.
+	Automatic:
+		Use composer and install panel from Nette addons.
+
+	Manual:
+		Copy four files into directory, where RobotLoader have access. E.g.
 
 		libs/Panels/XDebugTrace/XDebugTrace.php
+		libs/Panels/XDebugTrace/XDebugTraceExtension.php
 		libs/Panels/XDebugTrace/content.latte
 		libs/Panels/XDebugTrace/error.latte
 
+
+
 2. REGISTER PANEL
-	In next step, register panel in bootstrap.php. You need a web server
-	writable directory for temporary trace file. In XDebugTrace constructor
-	provide path to temporary trace file.
-*/
+	Short way:
+		Init panel as Nette extension.
+<?
+		$configurator->onCompile[] = function ($configurator, $compiler) {
+			$compiler->addExtension('xtrace', new Panel\XDebugTraceExtension);
+		};
+?>
+		and adjust (or not) configuration in config.neon
 
-define('TMP_DIR', __DIR__ . '/../temp');
-$xdebugTrace = new \Panel\XDebugTrace(TMP_DIR . '/xdebug_trace');
-\Nette\Diagnostics\Debugger::addPanel($xdebugTrace);
+		xtrace:
+			traceFile: /path/to/temp/trace_file.xt
+			onCreate: InitHelpers::adjustXTracePanel # Called when service is created
+
+	Longer way:
+		Register panel in bootstrap.php. In XDebugTrace constructor	provide path
+		to temporary trace file.
+<?
+		$xtrace = new \Panel\XDebugTrace(__DIR__ . '/../temp/xdebug_trace');
+		\Nette\Diagnostics\Debugger::addPanel($xtrace);
+?>
 
 
 
-/*
 3. START-PAUSE-STOP TRACING
 	Now, when panel is registered, you can start tracing.
-*/
-$xdebugTrace->start();
-$router = $container->router;
-$router[] = new Route('index.php', 'Homepage:default', Route::ONE_WAY);
-$router[] = new Route('<presenter>/<action>[/<id>]', 'Homepage:default');
-$xdebugTrace->pause();
+<?
+	$xtrace->start();
+	$router = $container->router;
+	$router[] = new Route('index.php', 'Homepage:default', Route::ONE_WAY);
+	$router[] = new Route('<presenter>/<action>[/<id>]', 'Homepage:default');
+	$xtrace->pause();
 
-$xdebugTrace->start('Application run');
-$application->run();
-$xdebugTrace->stop();
+	$xtrace->start('Application run');
+	$application->run();
+	$xtrace->stop();
+?>
 
-/*
+	If you used Nette extension, you find the XDebugTrace object as system
+	container service. So, in presenters:
+<?
+	public function createComponentForm()
+	{
+		$this->context->xtrace->start(__METHOD__);
+		...
+		...
+		...
+		$this->context->xtrace->stop();
+	}
+?>
+
 	Because of xdebug_trace_start() can run only once, only one instance
 	of XDebugTrace class can exists. You can call all methods
 	statically as XDebugTrace::callMethodName(). E.g.
-*/
-\Panel\XDebugTrace::callStart('Application run');
-\Panel\XDebugTrace::callPause();
-\Panel\XDebugTrace::callStop();
+<?
+	\Panel\XDebugTrace::callStart('Application run');
+	\Panel\XDebugTrace::callPause();
+	\Panel\XDebugTrace::callStop();
+?>
 
 
 
-/*
 4. OWN TEMPLATES
 	You can use all of \Nette\Templating\FileTemplate advantages and set own
 	latte template file or register own helpers.
-*/
-$template = $xdebugTrace->getTemplate();
-$template->setFile('templates/my-template.latte');
+<?
+	$template = $xtrace->getTemplate();
+	$template->setFile('templates/my-template.latte');
+?>
 
 
 
-/*
 5. TRACE RECORDS FILTERING
 	Filtering is a most ambitious work with this panel. Without this, HTML
 	output can be huge (megabytes). XDebugTrace panel provide simple mechanism
 	for trace records filtering. You can use prepared filters (methods starts
 	by 'trace' prefix).
-*/
-// Trace everything. Be careful, HTML output can be huge!
-$xdebugTrace->traceAll();
+<?
+	// Trace everything. Be careful, HTML output can be huge!
+	$xtrace->traceAll();
 
 
-// Trace single function...
-$xdebugTrace->traceFunction('weirdFunction');
-// ... and all the inside calls too...
-$xdebugTrace->traceFunction('weirdFunction', TRUE);
-// ... and PHP internals too.
-$xdebugTrace->traceFunction('weirdFunction', TRUE, TRUE);
+	// Trace single function...
+	$xtrace->traceFunction('weirdFunction');
+	// ... and all the inside calls too...
+	$xtrace->traceFunction('weirdFunction', TRUE);
+	// ... and PHP internals too.
+	$xtrace->traceFunction('weirdFunction', TRUE, TRUE);
 
 
-// Trace static method...
-$xdebugTrace->traceFunction('MyClass::weirdFunction');
-// ... or dynamic...
-$xdebugTrace->traceFunction('MyClass->weirdFunction');
-// ... or both.
-$xdebugTrace->traceFunction(array('MyClass', 'weirdFunction'));
+	// Trace static method...
+	$xtrace->traceFunction('MyClass::weirdFunction');
+	// ... or dynamic...
+	$xtrace->traceFunction('MyClass->weirdFunction');
+	// ... or both.
+	$xtrace->traceFunction(array('MyClass', 'weirdFunction'));
 
 
-// Trace functions by PCRE regular expression
-$xdebugTrace->traceFunctionRe('/^weird/i');
+	// Trace functions by PCRE regular expression
+	$xtrace->traceFunctionRe('/^weird/i');
 
 
-// Trace only functions running over the 15 miliseconds...
-$xdebugTrace->traceDeltaTime('15ms');
-// ... or function which consumes more then 20kB.
-$xdebugTrace->traceDeltaMemory('20kB');
+	// Trace only functions running over the 15 miliseconds...
+	$xtrace->traceDeltaTime('15ms');
+	// ... or function which consumes more then 20kB.
+	$xtrace->traceDeltaMemory('20kB');
+?>
 
-
-/*
 	If you want use own filters, at first, take a look on
 	XDebugTrace::defaultFilterCb() source code. This is	a default filtering
 	callback. Is used when you don't register own one. And take a look on
@@ -144,9 +170,8 @@ $xdebugTrace->traceDeltaMemory('20kB');
 	or return NULL. NULL means record passed and will be printed in bar.
 
 	Simple example follows.
-*/
-
-// Display everything except for internal functions
-$xdebugTrace->setFilterCallback(function($record){
-    return $record->isInternal ? \Panel\XDebugTrace::SKIP : NULL;
-});
+<?
+	// Display everything except for internal functions
+	$xtrace->setFilterCallback(function($record){
+	    return $record->isInternal ? \Panel\XDebugTrace::SKIP : NULL;
+	});
