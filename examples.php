@@ -48,6 +48,15 @@ http://github.com/milo/XDebugTracePanel
 		\Nette\Diagnostics\Debugger::addPanel($xtrace);
 ?>
 
+	 Nette 2.1-dev way (config.neon):
+	 	extensions:
+			xtrace: Panel\XDebugTraceExtension
+
+		services:
+			xtrace: Panel\XDebugTrace('xdebug')
+	
+	
+	
 
 
 3. START-PAUSE-STOP TRACING
