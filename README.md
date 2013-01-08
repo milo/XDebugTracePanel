@@ -16,3 +16,8 @@ Which version?
 --------------
 Panel works with Nette 2.0.x and Nette 2.1-dev (both with namespaces). If not, please, send me an [issue](https://github.com/milo/XDebugTracePanel/issues).
 Non-namespaced or prefixed Nette packages are not supported. It is really hard to filter them out in trace result.
+
+
+Screenshot
+----------
+![Panel screenshot](https://github.com/milo/XDebugTracePanel/raw/master/screenshot.png)
