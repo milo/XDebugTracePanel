@@ -40,6 +40,10 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		FILTER_REPLACE_EXIT = 32,
 		FILTER_REPLACE = 48;
 
+	/** @internal */
+	const
+		WRITE_OK = 'write-ok';
+
 	/**
 	 * @var int  maximal length of line in trace file
 	 */
@@ -162,7 +166,7 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		if (!extension_loaded('xdebug')) {
 			$this->setError('XDebug extension is not loaded');
 
-		} elseif (@file_put_contents($traceFile . '.xt', '') === FALSE) {
+		} elseif (@file_put_contents($traceFile . '.xt', self::WRITE_OK) === FALSE) {
 			$this->setError("Cannot create trace file '$traceFile.xt'", error_get_last());
 
 		} else {
@@ -443,8 +447,16 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 		$parsingStart = microtime(TRUE);
 
-		if (!($traceFileSize = filesize($this->traceFile . '.xt'))) {
-			// Tracing didn't start probably.
+		if (($traceFileSize = @filesize($this->traceFile . '.xt')) <= strlen(self::WRITE_OK)) {
+			if ($traceFileSize === FALSE) {
+				$this->setError("Cannot read trace file '$this->traceFile.xt' size", error_get_last());
+
+			} elseif ($traceFileSize === 0) {
+				$this->setError("Trace file '$this->traceFile.xt' is empty");
+
+			} elseif (@file_get_contents($this->traceFile . '.xt') === self::WRITE_OK) {
+				$this->setError('Tracing did not start');
+			}
 
 		} elseif (($fd = @fopen($this->traceFile . '.xt', 'rb')) === FALSE) {
 			$this->setError("Cannot open trace file '$this->traceFile.xt'", error_get_last());
