@@ -30,6 +30,7 @@ class XDebugTraceExtension extends CompilerExtension
 	private $defaults = array(
 		'traceFile' => '%tempDir%/xdebugTrace.xt',
 		'onCreate' => NULL,
+		'statistics' => NULL,
 	);
 
 
@@ -49,6 +50,11 @@ class XDebugTraceExtension extends CompilerExtension
 
 		if (!empty($config['onCreate'])) {
 			$method->addBody('call_user_func(?, $service);', array($config['onCreate']));
+		}
+
+		if (!empty($config['statistics'])) {
+			$args = is_array($config['statistics']) ? ($config['statistics'] + array(TRUE, NULL)) : array($config['statistics'], NULL);
+			$method->addBody('$service->enableStatistics(?, ?);', $args);
 		}
 
 		$method->addBody('return $service;');

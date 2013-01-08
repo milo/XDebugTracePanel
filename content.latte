@@ -41,7 +41,7 @@
 			{var $indent = $indents[$traceNo]}
 			<thead>
 				<tr n:ifset="$titles[$traceNo]">
-					<th colspan="6"><h2>{$titles[$traceNo]}</h2></th>
+					<th colspan="6"><h2>{$titles[$traceNo]} trace</h2></th>
 				</tr>
 				<tr>
 					<th>ID</th>
@@ -60,6 +60,27 @@
 					<td class="right {$record->deltaTime|timeClass}">{$record->deltaTime|time}</td>
 					<td class="right">{$record->deltaMemory|bytes}</td>
 					<td><a href="editor://open/?file={$record->filename}&amp;line={$record->line}" title="{$record->filename}">{$record->filename|basename}&nbsp;(<b>{$record->line}</b>)</a> {$record->evalInfo}</td>
+				</tr>
+			</tbody>
+		</table>
+		<table style="width:100%" n:ifset="$statistics[$traceNo]" n:if="count($statistics[$traceNo]) > 1 || count($trace) > 1">
+			<thead>
+				<tr n:ifset="$titles[$traceNo]">
+					<th colspan="6"><h2>{$titles[$traceNo]} statistics</h2></th>
+				</tr>
+				<tr>
+					<th>Count</th>
+					<th>&Delta;&nbsp;Time</th>
+					<th>&#8960;&nbsp;Time</th>
+					<th>Function</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr n:foreach="$statistics[$traceNo] as $function => $statistic">
+					<td class="right">{$statistic->count}</td>
+					<td class="right">{$statistic->deltaTime|time}</td>
+					<td class="right {$statistic->averageTime|timeClass}">{$statistic->averageTime|time}</td>
+					<td width="100%">{$function}</td>
 				</tr>
 			</tbody>
 		</table>

@@ -11,7 +11,7 @@ use
  * XDebug Trace panel for Nette 2 framework.
  *
  * @author  Miloslav Hůla
- * @version 0.3-beta6
+ * @version 0.3-beta7
  * @see     http://github.com/milo/XDebugTracePanel
  * @licence LGPL
  */
@@ -60,6 +60,16 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	private static $instance;
 
 	/**
+	 * @var bool  perform function time statistics
+	 */
+	protected $performStatistics = FALSE;
+
+	/**
+	 * @var string  by which column sort the statistics
+	 */
+	protected $sortBy = 'averageTime';
+
+	/**
 	 * @var int  tracing state
 	 */
 	private $state = self::STATE_STOP;
@@ -93,6 +103,16 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 * @var reference to $this->indents
 	 */
 	protected $indent;
+
+	/**
+	 * @var array[function => stdClass]
+	 */
+	protected $statistics = array();
+
+	/**
+	 * @var reference to $this->statistics
+	 */
+	protected $statistic;
 
 	/**
 	 * @var bool  internal error occured, error template will be rendered
@@ -220,6 +240,30 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		}
 
 		return self::$instance;
+	}
+
+
+
+	/**
+	 * Enable or disable function time statistics.
+	 *
+	 * @param  bool  enable statistics
+	 * @param  string  sort by column 'count', 'deltaTime' or 'averageTime'
+	 * @return \Panel\XDebugTrace
+	 * @throws \Nette\InvalidArgumentException
+	 */
+	public function enableStatistics($enable = TRUE, $sortBy = NULL)
+	{
+		$sortBy = $sortBy ?: 'averageTime';
+
+		if (!in_array($sortBy, array('count', 'deltaTime', 'averageTime'))) {
+			throw new \Nette\InvalidArgumentException("Cannot sort statistics by '$sortBy' column.");
+		}
+
+		$this->performStatistics = (bool) $enable;
+		$this->sortBy = $sortBy;
+
+		return $this;
 	}
 
 
@@ -538,6 +582,10 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		$template->parsingTime = microtime(TRUE) - $parsingStart;
 		$template->traceFileSize = $traceFileSize;
 
+		if ($this->performStatistics) {
+			$template->statistics = $this->statistics;
+		}
+
 		ob_start();
 		$template->render();
 		return ob_get_clean();
@@ -557,6 +605,11 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 		$this->indents[$index] = array();
 		$this->indent =& $this->indents[$index];
+
+		if ($this->performStatistics) {
+			$this->statistics[$index] = array();
+			$this->statistic =& $this->statistics[$index];
+		}
 	}
 
 
@@ -598,6 +651,19 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 			$null = NULL;
 			$this->trace =& $null;
 			$this->indent =& $null;
+
+			if ($this->performStatistics) {
+				foreach ($this->statistic as $statistic) {
+					$statistic->averageTime = $statistic->deltaTime / $statistic->count;
+				}
+
+				$sortBy = $this->sortBy;
+				uasort($this->statistic, function($a, $b) use ($sortBy) {
+					return $a->{$sortBy} < $b->{$sortBy};
+				});
+
+				$this->statistic =& $null;
+			}
 		}
 	}
 
@@ -661,6 +727,18 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 			if ($remove) {
 				unset($this->trace[$record->id]);
+
+			} elseif ($this->performStatistics) {
+				if (!isset($this->statistic[$entryRecord->function])) {
+					$this->statistic[$entryRecord->function] = (object) array(
+						'count' => 1,
+						'deltaTime' => $entryRecord->deltaTime,
+					);
+
+				} else {
+					$this->statistic[$entryRecord->function]->count += 1;
+					$this->statistic[$entryRecord->function]->deltaTime += $entryRecord->deltaTime;
+				}
 			}
 		}
 	}

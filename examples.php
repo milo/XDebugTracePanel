@@ -23,7 +23,10 @@ http://github.com/milo/XDebugTracePanel
 		# Optionally
 		xtrace:
 			traceFile: /path/to/temp/trace_file.xt
-			onCreate: InitHelpers::setupXTracePanel # Called when service is created
+			onCreate: InitHelpers::setupXTracePanel  # Called when service is created
+			statistics: TRUE                         # Perform function running time statistics
+			or
+			statistics: [TRUE, deltaTime]            # and sort them by deltaTime
 
 
 	Still short way for Nette 2.0.x, works for 2.1-dev too (add as extension):
@@ -37,7 +40,10 @@ http://github.com/milo/XDebugTracePanel
 
 		xtrace:
 			traceFile: /path/to/temp/trace_file.xt
-			onCreate: InitHelpers::setupXTracePanel # Called when service is created
+			onCreate: InitHelpers::setupXTracePanel  # Called when service is created
+			statistics: TRUE                         # Perform function running time statistics
+			or
+			statistics: [TRUE, deltaTime]            # and sort them by deltaTime
 
 
 	Long way, works always (register panel manually):
@@ -46,6 +52,9 @@ http://github.com/milo/XDebugTracePanel
 <?
 		$xtrace = new \Panel\XDebugTrace(__DIR__ . '/../temp/trace_file.xt');
 		\Nette\Diagnostics\Debugger::addPanel($xtrace);
+
+		// Optionally
+		$xtrace->enableStatistics(TRUE, 'deltaTime');
 ?>
 
 
