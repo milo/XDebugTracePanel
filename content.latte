@@ -36,8 +36,8 @@
 <div class="xdbgpanel">
 	<h1>XDebugTrace</h1>
 
-	<div class="nette-inner" n:inner-foreach="$traces AS $traceNo => $trace">
-		<table style="width: 100%">
+	<div class="nette-inner" n:inner-foreach="$traces as $traceNo => $trace">
+		<table style="width:100%">
 			{var $indent = $indents[$traceNo]}
 			<thead>
 				<tr n:ifset="$titles[$traceNo]">
@@ -53,7 +53,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr n:foreach="$trace AS $record">
+				<tr n:foreach="$trace as $record">
 					<td class="right">{$record->id}</td>
 					<td class="right">{$record->level}</td>
 					<td style="padding-left:{=($indent[$record->level] * 8) + 5}px">{$record->function}</td>

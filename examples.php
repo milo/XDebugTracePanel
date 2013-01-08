@@ -1,4 +1,4 @@
-Examples of using XDebugTrace panel for Nette 2.0
+Examples of using XDebugTrace panel for Nette 2
 http://github.com/milo/XDebugTracePanel
 
 1. INSTALLATION
@@ -17,23 +17,23 @@ http://github.com/milo/XDebugTracePanel
 
 2. REGISTER PANEL
 	Short way:
-		Init panel as Nette extension.
+		Init panel as Nette extension
 <?
-		$configurator->onCompile[] = function ($configurator, $compiler) {
+		$configurator->onCompile[] = function($configurator, $compiler) {
 			$compiler->addExtension('xtrace', new Panel\XDebugTraceExtension);
 		};
 ?>
-		and adjust (or not) configuration in config.neon
+		and adjust (or not) configuration in config.neon.
 
 		xtrace:
 			traceFile: /path/to/temp/trace_file.xt
-			onCreate: InitHelpers::adjustXTracePanel # Called when service is created
+			onCreate: InitHelpers::setupXTracePanel # Called when service is created
 
 	Longer way:
-		Register panel in bootstrap.php. In XDebugTrace constructor	provide path
-		to temporary trace file.
+		Register panel in bootstrap.php. Provide path to temporary trace file
+		in XDebugTrace constructor.	Extension .xt is not necessary.
 <?
-		$xtrace = new \Panel\XDebugTrace(__DIR__ . '/../temp/xdebug_trace');
+		$xtrace = new \Panel\XDebugTrace(__DIR__ . '/../temp/trace_file.xt');
 		\Nette\Diagnostics\Debugger::addPanel($xtrace);
 ?>
 
@@ -66,7 +66,7 @@ http://github.com/milo/XDebugTracePanel
 	}
 ?>
 
-	Because of xdebug_trace_start() can run only once, only one instance
+	Because of xdebug_trace_start() can runs only once, only one instance
 	of XDebugTrace class can exists. You can call all methods
 	statically as XDebugTrace::callMethodName(). E.g.
 <?
@@ -90,8 +90,8 @@ http://github.com/milo/XDebugTracePanel
 5. TRACE RECORDS FILTERING
 	Filtering is a most ambitious work with this panel. Without this, HTML
 	output can be huge (megabytes). XDebugTrace panel provide simple mechanism
-	for trace records filtering. You can use prepared filters (methods starts
-	by 'trace' prefix).
+	for records filtering. You can use prepared filters (methods starts	by
+	'trace' prefix).
 <?
 	// Trace everything. Be careful, HTML output can be huge!
 	$xtrace->traceAll();
@@ -125,7 +125,7 @@ http://github.com/milo/XDebugTracePanel
 
 	If you want use own filters, at first, take a look on
 	XDebugTrace::defaultFilterCb() source code. This is	a default filtering
-	callback. Is used when you don't register own one. And take a look on
+	callback. It is used when you don't register own one. And take a look on
 	XDebugTrace::trace.....() methods source code.
 
 	At second, is good to know xdebug trace file structure:
@@ -147,8 +147,10 @@ http://github.com/milo/XDebugTracePanel
 		Detailed on http://xdebug.org/docs/execution_trace
 
 	Use these functions for set-up own filters:
-		$debugTrace->addFilterCallback($callback, $flags)
-		$debugTrace->setFilterCallback($callback, $flags)
+<?
+		$xtrace->addFilterCallback($callback, $flags);
+		$xtrace->setFilterCallback($callback, $flags);
+?>
 
 	$flags is a bitmask of \Panel\XDebugTrace::FILTER_* constants.
 		FILTER_ENTRY - call filter on entry records (default)
@@ -164,14 +166,14 @@ http://github.com/milo/XDebugTracePanel
 		FILTER_REPLACE       = FILTER_REPLACE_ENTRY | FILTER_REPLACE_EXIT
 
 	Your callback should return bitmask of flags:
-		\Panel\XDebugTrace::SKIP - skip this record
-		\Panel\XDebugTrace::STOP - don't call followed filters
+		\Panel\XDebugTrace::SKIP - skip this record, don't print it in the panel
+		\Panel\XDebugTrace::STOP - don't call remain filters
 
 	or return NULL. NULL means record passed and will be printed in bar.
 
 	Simple example follows.
 <?
 	// Display everything except for internal functions
-	$xtrace->setFilterCallback(function($record){
+	$xtrace->setFilterCallback(function($record) {
 	    return $record->isInternal ? \Panel\XDebugTrace::SKIP : NULL;
 	});

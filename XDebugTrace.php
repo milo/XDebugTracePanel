@@ -8,10 +8,10 @@ use
 	Nette\Latte\Engine;
 
 /**
- * XDebug Trace panel for Nette 2.0 framework.
+ * XDebug Trace panel for Nette 2 framework.
  *
  * @author  Miloslav Hůla
- * @version 0.3-beta5
+ * @version 0.3-beta6
  * @see     http://github.com/milo/XDebugTracePanel
  * @licence LGPL
  */
@@ -41,12 +41,12 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		FILTER_REPLACE = 48;
 
 	/**
-	 * @var int maximal length of line in trace file
+	 * @var int  maximal length of line in trace file
 	 */
 	public static $traceLineLength = 4096;
 
 	/**
-	 * @var bool delete trace file in destructor or not
+	 * @var bool  delete trace file in destructor or not
 	 */
 	public $deleteTraceFile = FALSE;
 
@@ -56,17 +56,17 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	private static $instance;
 
 	/**
-	 * @var int tracing state
+	 * @var int  tracing state
 	 */
 	private $state = self::STATE_STOP;
 
 	/**
-	 * @var string path to trace file
+	 * @var string  path to trace file
 	 */
 	private $traceFile;
 
 	/**
-	 * @var array of stdClass
+	 * @var stdClass[]
 	 */
 	protected $traces = array();
 
@@ -76,12 +76,12 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	protected $trace;
 
 	/**
-	 * @var array of string trace titles
+	 * @var string[]  trace titles
 	 */
 	protected $titles = array();
 
 	/**
-	 * @var array of level => indent size
+	 * @var array[level => indent size]
 	 */
 	protected $indents = array();
 
@@ -91,7 +91,7 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	protected $indent;
 
 	/**
-	 * @var bool internal class error occured, error template will be rendered
+	 * @var bool  internal error occured, error template will be rendered
 	 */
 	protected $isError = FALSE;
 
@@ -111,17 +111,17 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	protected $errLine;
 
 	/**
-	 * @var array of callbacks called when parsing entry record from trace file
+	 * @var callback[]  called when entry record from trace file is parsed
 	 */
 	protected $filterEntryCallbacks = array();
 
 	/**
-	 * @var array of callbacks called when parsing exit record from trace file
+	 * @var callback[]  called when exit record from trace file is parsed
 	 */
 	protected $filterExitCallbacks = array();
 
 	/**
-	 * @var array of bool  default filtering callback setting
+	 * @var array[setting => bool]  default filter setting
 	 */
 	protected $skipOver = array(
 		'phpInternals' => TRUE,
@@ -145,14 +145,13 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 	/**
-	 * @param  string path to trace file
-	 * @param  bool skip PHP internal functions when parsing trace file
+	 * @param  string  path to trace file, extension .xt is optional
 	 * @throws \Nette\InvalidStateException
 	 */
 	public function __construct($traceFile)
 	{
 		if (self::$instance !== NULL) {
-			throw new \Nette\InvalidStateException('Class ' . get_class($this) . ' can be instantized only once, xdebug_start_trace() can run only once.');
+			throw new \Nette\InvalidStateException('Class ' . get_class($this) . ' can be instantized only once, xdebug_start_trace() can runs only once.');
 		}
 		self::$instance = $this;
 
@@ -221,11 +220,11 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 
-	/* ~~~ Start/Stop tracing part ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+	/* ~~~ Start/Pause/Stop tracing part ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 	/**
 	 * Start or continue tracing.
 	 *
-	 * @param  string|NULL trace title
+	 * @param  string|NULL  trace title
 	 */
 	public function start($title = NULL)
 	{
@@ -318,24 +317,24 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Template helper converts seconds to ns, us, ms, s.
 	 *
-	 * @param  float time interval in seconds
-	 * @param  decimal part precision
-	 * @return string formated time
+	 * @param  float  time interval in seconds
+	 * @param  decimal  part precision
+	 * @return string  formated time
 	 */
 	public function timeHelper($time, $precision = 0)
 	{
 		$units = 's';
-		if ($time < 0.000001) {	// <1us
+		if ($time < 1e-6) {	// <1us
 			$units = 'ns';
-			$time *= 1000000000;
+			$time *= 1e9;
 
-		} elseif ($time < 0.001) { // <1ms
+		} elseif ($time < 1e-3) { // <1ms
 			$units = "\xc2\xb5s";
-			$time *= 1000000;
+			$time *= 1e6;
 
 		} elseif ($time < 1) { // <1s
 			$units = 'ms';
-			$time *= 1000;
+			$time *= 1e3;
 		}
 
 		return round($time, $precision) . ' ' . $units;
@@ -344,17 +343,17 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 	/**
-	 * Template helper converts seconds to HTML class.
+	 * Template helper converts seconds to HTML class string.
 	 *
-	 * @param  float time interval in seconds
-	 * @param  float over this value is interval classified as slow
-	 * @param  float under this value is interval classified as fast
+	 * @param  float  time interval in seconds
+	 * @param  float  over this value is interval classified as slow
+	 * @param  float  under this value is interval classified as fast
 	 * @return string
 	 */
 	public function timeClassHelper($time, $slow = NULL, $fast = NULL)
 	{
-		$slow = $slow ?: 0.02;	// 20ms
-		$fast = $fast ?: 0.001;	//  1ms
+		$slow = $slow ?: 0.02;  // 20ms
+		$fast = $fast ?: 1e-3;  //  1ms
 
 		if ($time <= $fast) {
 			return 'timeFast';
@@ -371,7 +370,7 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Template helper extracts base filename from file path.
 	 *
-	 * @param  string path to file
+	 * @param  string  path to file
 	 * @return string
 	 */
 	public function basenameHelper($path)
@@ -384,8 +383,8 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Sets internal error variables.
 	 *
-	 * @param  string error message
-	 * @param  array error_get_last()
+	 * @param  string  error message
+	 * @param  array  error_get_last()
 	 */
 	protected function setError($message, array $lastError = NULL)
 	{
@@ -404,7 +403,7 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Render error message.
 	 *
-	 * @return  string rendered error template
+	 * @return  string  rendered error template
 	 */
 	protected function renderError()
 	{
@@ -421,7 +420,7 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 	/**
-	 * Implements Nette\Diagnostics\IBarPanel
+	 * Implements \Nette\Diagnostics\IBarPanel
 	 */
 	public function getTab()
 	{
@@ -432,7 +431,7 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 	/**
-	 * Implements Nette\Diagnostics\IBarPanel
+	 * Implements \Nette\Diagnostics\IBarPanel
 	 */
 	public function getPanel()
 	{
@@ -513,7 +512,7 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 				}
  			}
 
- 			$this->closeTrace();	// in case of non-complete trace file
+ 			$this->closeTrace();  // in case of non-complete trace file
 		}
 
 		if ($this->isError) {
@@ -556,10 +555,10 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	protected function closeTrace()
 	{
 		if ($this->trace !== NULL) {
-			foreach ($this->trace AS $id => $record) {
+			foreach ($this->trace as $id => $record) {
 				if (!$record->exited) {	// last chance to filter non-exited records by FILTER_EXIT callback
 					$remove = FALSE;
-					foreach ($this->filterExitCallbacks AS $callback) {
+					foreach ($this->filterExitCallbacks as $callback) {
 						$result = (int) call_user_func($callback, $record, FALSE, $this);
 						if ($result & self::SKIP) {
 							$remove = TRUE;
@@ -606,13 +605,13 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Push parsed trace file line into trace stack.
 	 *
-	 * @param  stdClass parsed trace file line
+	 * @param  \stdClass  parsed trace file line
 	 */
 	protected function addRecord(\stdClass $record)
 	{
 		if ($record->isEntry) {
 			$add = TRUE;
-			foreach ($this->filterEntryCallbacks AS $callback) {
+			foreach ($this->filterEntryCallbacks as $callback) {
 				$result = (int) call_user_func($callback, $record, TRUE, $this);
 				if ($result & self::SKIP) {
 					$add = FALSE;
@@ -637,7 +636,7 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 			$entryRecord->deltaMemory = $record->memory - $entryRecord->memory;
 
 			$remove = FALSE;
-			foreach ($this->filterExitCallbacks AS $callback) {
+			foreach ($this->filterExitCallbacks as $callback) {
 				$result = (int) call_user_func($callback, $entryRecord, FALSE, $this);
 				if ($result & self::SKIP) {
 					$remove = TRUE;
@@ -658,11 +657,11 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 	/* ~~~ Trace records filtering ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 	/**
-	 * Setting of default filtering callback.
+	 * Default filter (self::defaultFilterCb()) setting.
 	 *
 	 * @param  string
-	 * @param  bool skip or not
-	 * @return Panel\XDebugTrace
+	 * @param  bool  skip or not
+	 * @return \Panel\XDebugTrace
 	 */
 	public function skip($type, $skip)
 	{
@@ -679,8 +678,8 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Shortcut to self::skip('phpInternals', bool)
 	 *
-	 * @param  bool skip PHP internal functions?
-	 * @return Panel\XDebugTrace
+	 * @param  bool  skip PHP internal functions?
+	 * @return \Panel\XDebugTrace
 	 */
 	public function skipInternals($skip)
 	{
@@ -692,8 +691,8 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Default filtering callback.
 	 *
-	 * @param  stdClass trace file record
-	 * @return int bitmask of self::SKIP, self::STOP
+	 * @param  \stdClass  trace file record
+	 * @return int  bitmask of self::SKIP, self::STOP
 	 */
 	protected function defaultFilterCb(\stdClass $record)
 	{
@@ -745,8 +744,8 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Register own filter callback.
 	 *
-	 * @param  callback(stdClass $record, bool $onEntry, \Panel\XDebugTrace $this)
-	 * @param  int bitmask of self::FILTER_*
+	 * @param  callback(\stdClass $record, bool $isEntry, \Panel\XDebugTrace $this)
+	 * @param  int  bitmask of self::FILTER_*
 	 */
 	public function addFilterCallback($callback, $flags = NULL)
 	{
@@ -786,8 +785,8 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Replace all filter callbacks by this one.
 	 *
-	 * @param  callback(stdClass $record, bool $onEntry, \Panel\XDebugTrace $this)
-	 * @param  int bitmask of self::FILTER_*
+	 * @param  callback(\stdClass $record, bool $isEntry, \Panel\XDebugTrace $this)
+	 * @param  int  bitmask of self::FILTER_*
 	 */
 	public function setFilterCallback($callback, $flags = NULL)
 	{
@@ -815,11 +814,11 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Trace function by name.
 	 *
-	 * @param  string|array name of function or pair array(class, method)
-	 * @param  bool show inside function trace too
-	 * @param  bool show internals in inside function trace
+	 * @param  string|array  name of function or pair array(class, method)
+	 * @param  bool  show inside function trace too
+	 * @param  bool  show internals in inside function trace
 	 */
-	public function traceFunction($name, $inDetail = FALSE, $showInternals = FALSE)
+	public function traceFunction($name, $deep = FALSE, $showInternals = FALSE)
 	{
 		if (is_array($name)) {
 			$name1 = implode('::', $name);
@@ -828,15 +827,15 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 			$name1 = $name2 = (string) $name;
 		}
 
-		$cb = function(\stdClass $record, $onEntry) use ($name1, $name2, $inDetail, $showInternals) {
+		$cb = function(\stdClass $record, $isEntry) use ($name1, $name2, $deep, $showInternals) {
 			static $cnt = 0;
 
 			if ($record->function === $name1 || $record->function === $name2) {
-				$cnt += $onEntry ? 1 : -1;
+				$cnt += $isEntry ? 1 : -1;
 				return NULL;
 			}
 
-			return ($inDetail && $cnt && ($showInternals || !$record->isInternal)) ? NULL : XDebugTrace::SKIP;
+			return ($deep && $cnt && ($showInternals || !$record->isInternal)) ? NULL : XDebugTrace::SKIP;
 		};
 
 		$this->setFilterCallback($cb, self::FILTER_BOTH);
@@ -851,17 +850,17 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 * @param  bool show inside function trace too
 	 * @param  bool show internals in inside function trace
 	 */
-	public function traceFunctionRe($re, $inDetail = FALSE, $showInternals = FALSE)
+	public function traceFunctionRe($re, $deep = FALSE, $showInternals = FALSE)
 	{
-		$cb = function(\stdClass $record, $onEntry) use ($re, $inDetail, $showInternals) {
+		$cb = function(\stdClass $record, $isEntry) use ($re, $deep, $showInternals) {
 			static $cnt = 0;
 
 			if (preg_match($re, $record->function)) {
-				$cnt += $onEntry ? 1 : -1;
+				$cnt += $isEntry ? 1 : -1;
 				return NULL;
 			}
 
-			return ($inDetail && $cnt && ($showInternals || !$record->isInternal)) ? NULL : XDebugTrace::SKIP;
+			return ($deep && $cnt && ($showInternals || !$record->isInternal)) ? NULL : XDebugTrace::SKIP;
 		};
 
 		$this->setFilterCallback($cb, self::FILTER_BOTH);
@@ -872,22 +871,23 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Trace functions running over/under the time.
 	 *
-	 * @param  float delta time
+	 * @param  float  delta time
 	 * @param  bool  TRUE = over the delta time, FALSE = under the delta time
 	 */
 	public function traceDeltaTime($delta, $over = TRUE)
 	{
 		if (is_string($delta)) {
-			static $multipliers = array(
+			static $units = array(
+				'ns' => 1e-9,
+				'us' => 1e-6,
+				'ms' => 1e-3,
 				's' => 1,
-				'ms' => 0.001,
-				'us' => 0.000001,
-				'ns' => 0.000000001,
 			);
 
-			foreach ($multipliers as $suffix => $multipler) {
-				if (substr_compare($delta, $suffix, -2, 2, TRUE) === 0) {
-					$delta = substr($delta, 0, -2) * $multipler;
+			foreach ($units as $unit => $multipler) {
+				$length = strlen($unit);
+				if (substr_compare($delta, $unit, -$length, $length, TRUE) === 0) {
+					$delta = substr($delta, 0, -$length) * $multipler;
 					break;
 				}
 			}
@@ -914,22 +914,22 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	/**
 	 * Trace functions which consumes over/under the memory.
 	 *
-	 * @param  float delta memory
+	 * @param  float  delta memory
 	 * @param  bool  TRUE = over the delta memory, FALSE = under the delta memory
 	 */
 	public function traceDeltaMemory($delta, $over = TRUE)
 	{
 		if (is_string($delta)) {
-			static $multipliers = array(
-				'b' => 1,
-				'kb' => 1000,
-				'mb' => 1000000,
-				'gb' => 1000000000,
+			static $units = array(
+				'MB' => 1048576, // 1024 * 1024
+				'kB' => 1024,
+				'B' => 1,
 			);
 
-			foreach ($multipliers as $suffix => $multipler) {
-				if (substr_compare($delta, $suffix, -2, 2, TRUE) === 0) {
-					$delta = substr($delta, 0, -2) * $multipler;
+			foreach ($units as $unit => $multipler) {
+				$length = strlen($unit);
+				if (substr_compare($delta, $unit, -$length, $length, TRUE) === 0) {
+					$delta = substr($delta, 0, -$length) * $multipler;
 					break;
 				}
 			}
