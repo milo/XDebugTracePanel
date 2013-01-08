@@ -4,14 +4,22 @@ namespace Panel;
 
 
 
-use Nette\Config\CompilerExtension,
+use Nette\Framework,
+	Nette\Config\CompilerExtension,
 	Nette\DI\Container,
 	Nette\Utils\PhpGenerator\ClassType;
 
 
 
+if (version_compare(Framework::VERSION, '2.1-dev', '>=')) {
+	// due to strict standards, afterCompile() typehint must be preserved
+	class_alias('Nette\\PhpGenerator\\ClassType', 'Nette\\Utils\\PhpGenerator\\ClassType');
+}
+
+
+
 /**
- * XDebug Trace Nette extension.
+ * XDebug Trace extension for Nette 2
  *
  * @author  Miloslav Hůla
  * @see     http://github.com/milo/XDebugTracePanel
@@ -30,7 +38,12 @@ class XDebugTraceExtension extends CompilerExtension
 	{
 		$config = $this->getConfig($this->defaults);
 
-		$method = $class->methods[Container::getMethodName($this->name)];
+		$name = Container::getMethodName($this->name);
+		if (!isset($class->methods[$name])) {
+			$class->addMethod($name); // when declared in .neon since Nette 2.1-dev
+		}
+
+		$method = $class->methods[$name];
 		$method->setBody('');
 		$method->addBody('$service = new Panel\XDebugTrace(?);', array($config['traceFile']));
 

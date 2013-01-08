@@ -16,20 +16,31 @@ http://github.com/milo/XDebugTracePanel
 
 
 2. REGISTER PANEL
-	Short way:
-		Init panel as Nette extension
+	The shortest way for Nette 2.1-dev (add as extension in config.neon):
+		extensions:
+			xtrace: Panel\XDebugTraceExtension
+
+		# Optionally
+		xtrace:
+			traceFile: /path/to/temp/trace_file.xt
+			onCreate: InitHelpers::setupXTracePanel # Called when service is created
+
+
+	Still short way for Nette 2.0.x, works for 2.1-dev too (add as extension):
+		In bootstrap.php
 <?
 		$configurator->onCompile[] = function($configurator, $compiler) {
 			$compiler->addExtension('xtrace', new Panel\XDebugTraceExtension);
 		};
 ?>
-		and adjust (or not) configuration in config.neon.
+		and optionally adjust configuration in config.neon.
 
 		xtrace:
 			traceFile: /path/to/temp/trace_file.xt
 			onCreate: InitHelpers::setupXTracePanel # Called when service is created
 
-	Longer way:
+
+	Long way, works always (register panel manually):
 		Register panel in bootstrap.php. Provide path to temporary trace file
 		in XDebugTrace constructor.	Extension .xt is not necessary.
 <?
