@@ -892,11 +892,15 @@ class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 */
 	public function traceAll()
 	{
+/*
 		$cb = function () {
 			return NULL;
 		};
 
 		$this->setFilterCallback($cb, self::FILTER_BOTH);
+*/
+		$this->filterEntryCallbacks = array();
+		$this->filterExitCallbacks = array();
 	}
 
 
