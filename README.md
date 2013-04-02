@@ -9,7 +9,7 @@ Debugger panel for [Nette Framework 2](http://nette.org)
 
 Installation & Usage
 --------------------
-Take a look in [examples.php](https://github.com/milo/XDebugTracePanel/blob/master/examples.php)
+Take a look in [HOWTO](https://github.com/milo/XDebugTracePanel/blob/master/HOWTO.md)
 
 
 Which version?
