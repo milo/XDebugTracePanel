@@ -1,0 +1,14 @@
+{
+	"name": "milo/xdebug-trace-panel",
+	"description": "Functions tracing into Nette Framework 2.x debugger panel",
+	"license": ["LGPL-3.0"],
+	"authors": [
+		{
+			"name": "Miloslav Hůla",
+			"homepage": "https://github.com/milo"
+		}
+	],
+	"autoload": {
+		"classmap": ["XDebugTrace.php", "XDebugTraceExtension.php"]
+	}
+}

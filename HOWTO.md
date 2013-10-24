@@ -1,13 +1,16 @@
 How to use XDebugTrace panel for Nette
 ======================================
 
-**Source:**: http://github.com/milo/XDebugTracePanel
+**Source:** http://github.com/milo/XDebugTracePanel
 
 
 
 1. INSTALLATION
 ---------------
-**Automatic:** Use composer and install panel from Nette addons.
+**Automatic:** Use [Composer](http://getcomposer.org/)
+```sh
+$ composer require milo/xdebug-trace-panel:@dev
+```
 
 **Manual:** Copy four files into directory, where `RobotLoader` have access, e.g.
 ```
