@@ -19,11 +19,12 @@ if (version_compare(Framework::VERSION, '2.1-dev', '>=')) {
 
 
 /**
- * XDebug Trace extension for Nette 2
+ * XDebug Trace panel extension for Nette framework.
  *
- * @author  Miloslav Hůla
- * @see     http://github.com/milo/XDebugTracePanel
- * @licence LGPL
+ * @author   Miloslav Hůla
+ * @version  $Format:%m$
+ * @see      http://github.com/milo/XDebugTracePanel
+ * @licence  LGPL
  */
 class XDebugTraceExtension extends CompilerExtension
 {

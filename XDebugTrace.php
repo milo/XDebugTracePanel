@@ -8,12 +8,12 @@ use
 	Nette\Latte\Engine;
 
 /**
- * XDebug Trace panel for Nette 2 framework.
+ * XDebug Trace panel for Nette framework.
  *
- * @author  Miloslav Hůla
- * @version 0.3-beta7
- * @see     http://github.com/milo/XDebugTracePanel
- * @licence LGPL
+ * @author   Miloslav Hůla
+ * @version  $Format:%m$
+ * @see      http://github.com/milo/XDebugTracePanel
+ * @licence  LGPL
  */
 class XDebugTrace extends Nette\Object implements Nette\Diagnostics\IBarPanel
 {
