@@ -1,0 +1,4 @@
+.gitattributes export-ignore
+composer.json export-ignore
+
+*.php export-subst
