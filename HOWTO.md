@@ -27,13 +27,14 @@ a) The shortest way for **Nette 2.1** (add as extension in config.neon):
 extensions:
 	xtrace: Panel\XDebugTraceExtension
 
-		# Optionally
-		traceFile: '%tempDir%/trace.xt'
-		onCreate: Helpers::setupXTracePanel  # Called when service is created
-		statistics: TRUE                     # Perform time statistics
+# Optionally
+xtrace:
+	traceFile: '%tempDir%/trace.xt'
+	onCreate: Helpers::setupXTracePanel  # Called when service is created
+	statistics: TRUE                     # Perform time statistics
 
-		# or
-		statistics: [TRUE, deltaTime]        # and sort them by deltaTime
+	# or
+	statistics: [TRUE, deltaTime]        # and sort them by deltaTime
 ```
 
 b) Still short way for **Nette 2.0.x** which works for **2.1.x** too (add as extension). In `bootstrap.php`:
