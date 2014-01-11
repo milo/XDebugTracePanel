@@ -7,6 +7,10 @@ How to use XDebugTrace panel for Nette
 ---------------
 **Automatic:** Use [Composer](http://getcomposer.org/)
 ```sh
+# For Nette 2.0.x
+$ composer require milo/xdebug-trace-panel "2.0.*@dev"
+
+# For Nette 2.1.x and newer
 $ composer require milo/xdebug-trace-panel@dev
 ```
 
