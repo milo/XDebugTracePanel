@@ -2,19 +2,10 @@
 
 namespace Panel;
 
-
-
 use Nette\Framework,
 	Nette\Config\CompilerExtension,
 	Nette\DI\Container,
-	Nette\Utils\PhpGenerator\ClassType;
-
-
-
-if (version_compare(Framework::VERSION, '2.1-dev', '>=')) {
-	// due to strict standards, afterCompile() typehint must be preserved
-	class_alias('Nette\\PhpGenerator\\ClassType', 'Nette\\Utils\\PhpGenerator\\ClassType');
-}
+	Nette\PhpGenerator\ClassType;
 
 
 
@@ -35,15 +26,12 @@ class XDebugTraceExtension extends CompilerExtension
 	);
 
 
-
 	public function afterCompile(ClassType $class)
 	{
 		$config = $this->getConfig($this->defaults);
 
 		$name = Container::getMethodName($this->name);
-		if (!isset($class->methods[$name])) {
-			$class->addMethod($name); // when declared in .neon since Nette 2.1-dev
-		}
+		$class->addMethod($name);
 
 		$method = $class->methods[$name];
 		$method->setBody('');
