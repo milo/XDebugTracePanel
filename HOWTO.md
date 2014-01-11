@@ -1,18 +1,16 @@
 How to use XDebugTrace panel for Nette
 ======================================
 
-**Source:** http://github.com/milo/XDebugTracePanel
-
-
+**Source code:** http://github.com/milo/XDebugTracePanel
 
 1. INSTALLATION
 ---------------
 **Automatic:** Use [Composer](http://getcomposer.org/)
 ```sh
-$ composer require milo/xdebug-trace-panel:@dev
+$ composer require milo/xdebug-trace-panel@dev
 ```
 
-**Manual:** Copy four files into directory, where `RobotLoader` have access, e.g.
+**Manual:** Copy files into directory, where `RobotLoader` have access, e.g.
 ```
 libs/Panels/XDebugTrace/XDebugTrace.php
 libs/Panels/XDebugTrace/XDebugTraceExtension.php
@@ -24,21 +22,21 @@ libs/Panels/XDebugTrace/error.latte
 
 2. REGISTER PANEL
 -----------------
-a) The shortest way for **Nette 2.1-dev** (add as extension in config.neon):
+a) The shortest way for **Nette 2.1** (add as extension in config.neon):
 ```yml
 extensions:
 	xtrace: Panel\XDebugTraceExtension
 
 		# Optionally
-		traceFile: /path/to/temp/trace_file.xt
-		onCreate: InitHelpers::setupXTracePanel  # Called when service is created
-		statistics: TRUE                         # Perform time statistics
+		traceFile: '%tempDir%/trace.xt'
+		onCreate: Helpers::setupXTracePanel  # Called when service is created
+		statistics: TRUE                     # Perform time statistics
 
 		# or
-		statistics: [TRUE, deltaTime]            # and sort them by deltaTime
+		statistics: [TRUE, deltaTime]        # and sort them by deltaTime
 ```
 
-b) Still short way for **Nette 2.0.x** which works for **2.1-dev** too (add as extension). In `bootstrap.php`:
+b) Still short way for **Nette 2.0.x** which works for **2.1.x** too (add as extension). In `bootstrap.php`:
 ```php
 $configurator->onCompile[] = function($configurator, $compiler) {
 	$compiler->addExtension('xtrace', new Panel\XDebugTraceExtension);
@@ -48,18 +46,18 @@ $configurator->onCompile[] = function($configurator, $compiler) {
 and optionally adjust configuration in config.neon.
 ```yml
 xtrace:
-	traceFile: /path/to/temp/trace_file.xt
-	onCreate: InitHelpers::setupXTracePanel  # Called when service is created
-	statistics: TRUE                         # Perform time statistics
+	traceFile: '%tempDir%/trace.xt'
+	onCreate: Helpers::setupXTracePanel  # Called when service is created
+	statistics: TRUE                     # Perform time statistics
 
 	# or
-	statistics: [TRUE, deltaTime]            # and sort them by deltaTime
+	statistics: [TRUE, deltaTime]        # and sort them by deltaTime
 ```
 
-c) Long way, works always (register panel manually), register panel in `bootstrap.php`. Provide path to temporary trace file in XDebugTrace constructor. Extension .xt is not necessary.
+c) Long way (manual installation), works always. Register panel in `bootstrap.php`. Provide path to temporary trace file in XDebugTrace constructor.
 ```php
-$xtrace = new \Panel\XDebugTrace(__DIR__ . '/../temp/trace_file.xt');
-\Nette\Diagnostics\Debugger::addPanel($xtrace);
+$xtrace = new Panel\XDebugTrace(__DIR__ . '/../temp/trace.xt');
+Nette\Diagnostics\Debugger::addPanel($xtrace);
 
 # Optionally
 $xtrace->enableStatistics(TRUE, 'deltaTime');
@@ -82,7 +80,7 @@ $application->run();
 $xtrace->stop();
 ```
 
-If you used Nette extension, you find the XDebugTrace object as system container service. So, in presenters:
+If you use Nette extension, you find the XDebugTrace object as system container service. In presenters:
 ```php
 public function createComponentForm()
 {
@@ -94,28 +92,18 @@ public function createComponentForm()
 }
 ```
 
-Because of `xdebug_trace_start()` can runs only once, only one instance	of XDebugTrace class can exists. You can call all methods statically as `XDebugTrace::callMethodName()`, e.g.:
+Because of `xdebug_trace_start()` can runs only once, the only one instance of XDebugTrace class can exists. And you can call all methods statically as `XDebugTrace::callMethodName()`, e.g.:
 ```php
-\Panel\XDebugTrace::callStart('Application run');
-\Panel\XDebugTrace::callPause();
-\Panel\XDebugTrace::callStop();
-```
-
-
-
-4. OWN TEMPLATES
-----------------
-You can use all of `\Nette\Templating\FileTemplate` advantages and set own latte template file or register own helpers.
-```php
-	$template = $xtrace->getTemplate();
-	$template->setFile('templates/my-template.latte');
+Panel\XDebugTrace::callStart('Application run');
+Panel\XDebugTrace::callPause();
+Panel\XDebugTrace::callStop();
 ```
 
 
 
 5. TRACE RECORDS FILTERING
 --------------------------
-Filtering is a most ambitious work with this panel. Without this, HTML output can be huge (megabytes). XDebugTrace panel provide simple mechanism for records filtering. You can use prepared filters (methods starts	by `trace` prefix).
+Filtering is the most ambitious work with this panel. Without this, HTML output can be huge (megabytes). Panel provides mechanism for records filtering. You can use prepared filters (methods starts by `trace` prefix).
 ```php
 # Trace everything. Be careful, HTML output can be huge!
 $xtrace->traceAll();
@@ -123,9 +111,9 @@ $xtrace->traceAll();
 
 # Trace single function...
 $xtrace->traceFunction('weirdFunction');
-# ... and all the inside calls too...
+# ... and all inside calls too...
 $xtrace->traceFunction('weirdFunction', TRUE);
-# ... and PHP internals too.
+# ... and PHP internals too
 $xtrace->traceFunction('weirdFunction', TRUE, TRUE);
 
 
@@ -133,7 +121,7 @@ $xtrace->traceFunction('weirdFunction', TRUE, TRUE);
 $xtrace->traceFunction('MyClass::weirdFunction');
 # ... or dynamic...
 $xtrace->traceFunction('MyClass->weirdFunction');
-# ... or both.
+# ... or both
 $xtrace->traceFunction(array('MyClass', 'weirdFunction'));
 
 
@@ -143,7 +131,7 @@ $xtrace->traceFunctionRe('/^weird/i');
 
 # Trace only functions running over the 15 miliseconds...
 $xtrace->traceDeltaTime('15ms');
-# ... or function which consumes more then 20kB.
+# ... or function which consumes more then 20kB
 $xtrace->traceDeltaMemory('20kB');
 ```
 
@@ -173,7 +161,7 @@ $xtrace->addFilterCallback($callback, $flags);
 $xtrace->setFilterCallback($callback, $flags);
 ```
 
-`$flags` is a bitmask of `\Panel\XDebugTrace::FILTER_*` constants.
+`$flags` is a bitmask of `Panel\XDebugTrace::FILTER_*` constants.
 ```
 FILTER_ENTRY - call filter on entry records (default)
 FILTER_EXIT  - call filter on exit records
@@ -190,16 +178,16 @@ FILTER_REPLACE       = FILTER_REPLACE_ENTRY | FILTER_REPLACE_EXIT
 
 ```
 Your callback should return bitmask of flags:
-\Panel\XDebugTrace::SKIP - skip this record, don't print it in the panel
-\Panel\XDebugTrace::STOP - don't call remain filters
+Panel\XDebugTrace::SKIP - skip this record, don't print it in the panel
+Panel\XDebugTrace::STOP - don't call remain filters
 
 or return NULL. NULL means record passed and will be printed in bar.
 ```
 
-Simple example follows.
+Simple example follows:
 ```php
 # Display everything except for internal functions
 $xtrace->setFilterCallback(function($record) {
-    return $record->isInternal ? \Panel\XDebugTrace::SKIP : NULL;
+    return $record->isInternal ? Panel\XDebugTrace::SKIP : NULL;
 });
 ```
