@@ -1,21 +1,15 @@
 XDebugTrace Panel
 =================
-Debugger panel for [Nette Framework 2](http://nette.org)
+Debugger panel for [Nette Framework](http://nette.org)
 
 **Author:** Miloslav Hůla
-
 **Licence:** [LGPL Licence](http://www.gnu.org/licenses/lgpl.html)
 
 
 Installation & Usage
 --------------------
-Take a look in [HOWTO](https://github.com/milo/XDebugTracePanel/blob/master/HOWTO.md)
-
-
-Which version?
---------------
-Panel works with Nette 2.0.x and Nette 2.1-dev (both with namespaces). If not, please, send me an [issue](https://github.com/milo/XDebugTracePanel/issues).
-Non-namespaced or prefixed Nette packages are not supported. It is really hard to filter them out in trace result.
+Panel works with Nette 2.0.x, 2.1.x and I'm trying to keep it works with Nette dev. If you find some incompatibility, please, open an [issue](https://github.com/milo/XDebugTracePanel/issues).
+Take a look in [HOWTO](https://github.com/milo/XDebugTracePanel/blob/master/HOWTO.md).
 
 
 Screenshot
