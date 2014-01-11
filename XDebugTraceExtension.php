@@ -2,19 +2,10 @@
 
 namespace Panel;
 
-
-
 use Nette\Framework,
 	Nette\Config\CompilerExtension,
 	Nette\DI\Container,
 	Nette\Utils\PhpGenerator\ClassType;
-
-
-
-if (version_compare(Framework::VERSION, '2.1-dev', '>=')) {
-	// due to strict standards, afterCompile() typehint must be preserved
-	class_alias('Nette\\PhpGenerator\\ClassType', 'Nette\\Utils\\PhpGenerator\\ClassType');
-}
 
 
 
@@ -33,7 +24,6 @@ class XDebugTraceExtension extends CompilerExtension
 		'onCreate' => NULL,
 		'statistics' => NULL,
 	);
-
 
 
 	public function afterCompile(ClassType $class)
