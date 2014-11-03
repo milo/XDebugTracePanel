@@ -1,3 +1,7 @@
+!WARNING!
+=========
+This addon is abandoned. You can use it, It still works with nette 2.2.x but I'm writing new addon with completely new API.
+
 XDebugTrace Panel
 =================
 Debugger panel for [Nette Framework](http://nette.org)
